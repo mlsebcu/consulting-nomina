@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { DepartamentosModule } from './departamentos/departamentos.module';
 import { EmpleadosModule } from './empleados/empleados.module';
 import { NominaModule } from './nomina/nomina.module';
+import { ReportesModule } from './reportes/reportes.module';
 
 @Module({
   imports: [
@@ -39,6 +40,8 @@ import { NominaModule } from './nomina/nomina.module';
     EmpleadosModule,
 
     NominaModule,
+
+    ReportesModule,
   ],
 })
 export class AppModule {}
