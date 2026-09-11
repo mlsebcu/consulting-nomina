@@ -8,15 +8,17 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const config = new DocumentBuilder()
-    .setTitle('API Nómina - Consulting, S.A.')
-    .setDescription('Documentación de endpoints: Auth, Empleados, Deparatmentos, Nómina y Reportes')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  if (process.env.NODE_ENV === 'development') {
+    const config = new DocumentBuilder()
+      .setTitle('API Nómina - Consulting, S.A.')
+      .setDescription('Documentación de endpoints: Auth, Empleados, Deparatmentos, Nómina y Reportes')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   await app.listen(process.env.PORT ?? 3000);
 }

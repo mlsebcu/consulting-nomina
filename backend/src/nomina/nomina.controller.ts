@@ -6,7 +6,9 @@ import { Roles } from '../auth/roles.decorator';
 import { CreateEgresoDto } from './dto/create-egreso.dto';
 import { CalcularNominaDto } from './dto/calcular-nomina.dto';
 import { CerrarNominaDto } from './dto/cerrar-nomina.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('nomina')
 @Controller('nomina')
 export class NominaController {
     constructor(private readonly nominaService: NominaService) {}
