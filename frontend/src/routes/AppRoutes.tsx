@@ -3,6 +3,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import Login from "../features/auth/Login";
 import DepartamentosPage from "../features/departamentos/DepartamentosPage";
 import EmpleadosPage from "../features/empleados/EmpleadosPage";
+import { ComingSoon } from "@/components/ComingSoon";
 
 export function AppRoutes() {
     return (
@@ -16,8 +17,8 @@ export function AppRoutes() {
                 />
                 <Route path="/empleados" element={<EmpleadosPage />} />
                 <Route path="/departamentos" element={<DepartamentosPage />} />
-                {/* <Route path="/nomina" element={<NominaPage />} /> */}
-                {/* <Route path="/reportes" element={<ReportesPage />} /> */}
+                <Route path="/nomina" element={<ComingSoon modulo="Nómina" />} />
+                <Route path="/reportes" element={<ComingSoon modulo="Reportes" />} />
             </Route>
         </Routes>
     );
