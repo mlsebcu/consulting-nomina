@@ -1,60 +1,53 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { Table } from "../../components/Table";
-import { formatMoneda, formatFecha } from "../../utils/formatters";
-import type { CreateEmpleadoDto, Empleado } from "../empleados/Empleados.types";
-import type { Departamento } from "./Departamentos.types";
-import { empleadosApi } from "../empleados/Empleados.api";
+import { useEffect, useState } from "react";
+import type {
+    CreateDepartamentoDto,
+    Departamento,
+} from "./Departamentos.types";
 import { departamentosApi } from "./Departamentos.api";
+import { Table } from "../../components/Table";
 
-const FORM_INICIAL: CreateEmpleadoDto = {
-    nombre: "",
-    fechaNacimiento: "",
-    fechaIngreso: "",
-    salarioBase: 0,
-    diasLaborados: 30,
-    departamentoId: 0,
-};
+const FORM_INICIAL: CreateDepartamentoDto = { nombre: "", cuentaContable: "" };
 
-export default function EmpleadosPage() {
-    const [empleados, setEmpleados] = useState<Empleado[]>([]);
+export default function DepartamentosPage() {
     const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
-    const [form, setForm] = useState<CreateEmpleadoDto>(FORM_INICIAL);
+    const [form, setForm] = useState<CreateDepartamentoDto>(FORM_INICIAL);
     const [error, setError] = useState("");
 
-    async function cargarDatos() {
-        const [empleadosData, departamentosData] = await Promise.all([
-            empleadosApi.getAll(),
-            departamentosApi.getAll(),
-        ]);
-        setEmpleados(empleadosData);
-        setDepartamentos(departamentosData);
+    async function cargar() {
+        setDepartamentos(await departamentosApi.getAll());
     }
 
     useEffect(() => {
-        cargarDatos();
+        cargar();
     }, []);
 
-    async function handleSubmit(e: FormEvent) {
+    async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
         e.preventDefault();
         setError("");
         try {
-            await empleadosApi.create(form);
+            await departamentosApi.create(form);
             setForm(FORM_INICIAL);
-            await cargarDatos();
+            await cargar();
         } catch {
-            setError("No se pudo crear el empleado. Revisa los datos.");
+            setError("No se pudo crear el departamento.");
         }
     }
 
     async function handleEliminar(id: number) {
-        if (!confirm("¿Dar de baja a este empleado?")) return;
-        await empleadosApi.remove(id);
-        await cargarDatos();
+        if (!confirm("¿Eliminar este departamento?")) return;
+        try {
+            await departamentosApi.remove(id);
+            await cargar();
+        } catch {
+            alert(
+                "No se pudo eliminar (probablemente tiene empleados asignados).",
+            );
+        }
     }
 
     return (
-        <div style={{ maxWidth: 900, margin: "40px auto" }}>
-            <h2>Empleados</h2>
+        <div style={{ maxWidth: 700, margin: "40px auto" }}>
+            <h2>Departamentos</h2>
 
             <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
                 <input
@@ -66,85 +59,32 @@ export default function EmpleadosPage() {
                     required
                 />
                 <input
-                    type="date"
-                    value={form.fechaNacimiento}
+                    placeholder="Cuenta contable (ej. 5101-01)"
+                    value={form.cuentaContable}
                     onChange={(e) =>
-                        setForm({ ...form, fechaNacimiento: e.target.value })
+                        setForm({ ...form, cuentaContable: e.target.value })
                     }
                     required
                 />
-                <input
-                    type="date"
-                    value={form.fechaIngreso}
-                    onChange={(e) =>
-                        setForm({ ...form, fechaIngreso: e.target.value })
-                    }
-                    required
-                />
-                <input
-                    type="number"
-                    placeholder="Salario base"
-                    value={form.salarioBase || ""}
-                    onChange={(e) =>
-                        setForm({
-                            ...form,
-                            salarioBase: Number(e.target.value),
-                        })
-                    }
-                    required
-                />
-                <select
-                    value={form.departamentoId}
-                    onChange={(e) =>
-                        setForm({
-                            ...form,
-                            departamentoId: Number(e.target.value),
-                        })
-                    }
-                    required
-                >
-                    <option value={0} disabled>
-                        Selecciona departamento
-                    </option>
-                    {departamentos.map((d) => (
-                        <option key={d.departamentoId} value={d.departamentoId}>
-                            {d.nombre}
-                        </option>
-                    ))}
-                </select>
                 <button type="submit">Crear</button>
                 {error && <p style={{ color: "red" }}>{error}</p>}
             </form>
 
-            <Table<Empleado>
-                rowKey="empleadoId"
-                data={empleados}
-                emptyMessage="No hay empleados registrados"
+            <Table<Departamento>
+                rowKey="departamentoId"
+                data={departamentos}
+                emptyMessage="No hay departamentos registrados"
                 columns={[
                     { key: "nombre", label: "Nombre" },
+                    { key: "cuentaContable", label: "Cuenta Contable" },
                     {
-                        key: "departamento",
-                        label: "Departamento",
-                        render: (e) => e.departamento?.nombre ?? "-",
-                    },
-                    {
-                        key: "salarioBase",
-                        label: "Salario Base",
-                        render: (e) => formatMoneda(e.salarioBase),
-                    },
-                    {
-                        key: "fechaIngreso",
-                        label: "Fecha Ingreso",
-                        render: (e) => formatFecha(e.fechaIngreso),
-                    },
-                    {
-                        key: "empleadoId",
+                        key: "departamentoId",
                         label: "Acciones",
-                        render: (e) => (
+                        render: (d) => (
                             <button
-                                onClick={() => handleEliminar(e.empleadoId)}
+                                onClick={() => handleEliminar(d.departamentoId)}
                             >
-                                Dar de baja
+                                Eliminar
                             </button>
                         ),
                     },
