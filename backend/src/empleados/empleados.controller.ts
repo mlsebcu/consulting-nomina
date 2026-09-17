@@ -1,9 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { EmpleadosService } from './empleados.service';
 import { CreateEmpleadoDto } from './dto/create-empleado.dto';
 import { UpdateEmpleadoDto } from './dto/update-empleado.dto';
 import { Roles } from '../auth/roles.decorator';
 import { Rol } from '../common/enums/rol.enum';
+import * as currentUserDecorator from '../common/decorators/current-user.decorator';
 
 @Controller('empleados')
 export class EmpleadosController {
@@ -11,8 +21,11 @@ export class EmpleadosController {
 
   @Post()
   @Roles(Rol.ADMIN)
-  create(@Body() createEmpleadoDto: CreateEmpleadoDto) {
-    return this.empleadosService.create(createEmpleadoDto);
+  create(
+    @Body() createEmpleadoDto: CreateEmpleadoDto,
+    @currentUserDecorator.CurrentUser() user: currentUserDecorator.UsuarioAutenticado,
+  ) {
+    return this.empleadosService.create(createEmpleadoDto, user.usuarioId);
   }
 
   @Get()
@@ -29,13 +42,20 @@ export class EmpleadosController {
 
   @Patch(':id')
   @Roles(Rol.ADMIN)
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateEmpleadoDto: UpdateEmpleadoDto) {
-    return this.empleadosService.update(+id, updateEmpleadoDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateEmpleadoDto: UpdateEmpleadoDto,
+    @currentUserDecorator.CurrentUser() user: currentUserDecorator.UsuarioAutenticado,
+  ) {
+    return this.empleadosService.update(+id, updateEmpleadoDto, user.usuarioId);
   }
 
   @Delete(':id')
   @Roles(Rol.ADMIN)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.empleadosService.remove(+id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @currentUserDecorator.CurrentUser() user: currentUserDecorator.UsuarioAutenticado,
+  ) {
+    return this.empleadosService.remove(+id, user.usuarioId);
   }
 }

@@ -34,13 +34,9 @@ import { ReportesModule } from './reportes/reportes.module';
     }),
 
     AuthModule,
-
     DepartamentosModule,
-
     EmpleadosModule,
-
     NominaModule,
-
     ReportesModule,
   ],
 })
