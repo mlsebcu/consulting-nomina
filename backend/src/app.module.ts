@@ -9,6 +9,7 @@ import { EmpleadosModule } from './empleados/empleados.module';
 import { NominaModule } from './nomina/nomina.module';
 import { ReportesModule } from './reportes/reportes.module';
 import { ConceptosModule } from './conceptos/conceptos.module';
+import { PeriodosModule } from './periodos/periodos.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ConceptosModule } from './conceptos/conceptos.module';
     NominaModule,
     ReportesModule,
     ConceptosModule,
+    PeriodosModule,
   ],
 })
 export class AppModule {}
