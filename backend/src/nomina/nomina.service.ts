@@ -1,62 +1,166 @@
-import { Injectable } from '@nestjs/common';
-import { Nomina } from './entities/nomina.entity';
-import { IngresoEmpleado } from './entities/ingreso-empleado.entity';
-import { CreateIngresoDto } from './dto/create-ingreso.dto';
-import { EgresoEmpleado } from './entities/egreso-empleado.entity';
-import { DataSource, Repository } from 'typeorm';
-import { CreateEgresoDto } from './dto/create-egreso.dto';
-import { InjectRepository } from '@nestjs/typeorm';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { DataSource, Repository } from "typeorm";
+import { NominaEmpleado } from "./entities/nomina-empleado.entity";
+import { NominaDetalle } from "./entities/nomina-detalle.entity";
+import { Periodo } from "../periodos/entities/periodo.entity";
 
 @Injectable()
 export class NominaService {
-    constructor(
-    @InjectRepository(IngresoEmpleado)
-    private readonly ingresoRepo: Repository<IngresoEmpleado>,
-    @InjectRepository(EgresoEmpleado)
-    private readonly egresoRepo: Repository<EgresoEmpleado>,
-    @InjectRepository(Nomina)
-    private readonly nominaRepo: Repository<Nomina>,
+  constructor(
+    @InjectRepository(NominaEmpleado)
+    private readonly nominaRepo: Repository<NominaEmpleado>,
+    @InjectRepository(NominaDetalle)
+    private readonly detalleRepo: Repository<NominaDetalle>,
+    @InjectRepository(Periodo)
+    private readonly periodoRepo: Repository<Periodo>,
     private readonly dataSource: DataSource,
   ) {}
- 
-  // --- Captura manual de conceptos (los que no calcula el sistema) ---
- 
-  registrarIngreso(dto: CreateIngresoDto): Promise<IngresoEmpleado> {
-    const ingreso = this.ingresoRepo.create(dto);
-    return this.ingresoRepo.save(ingreso);
-  }
- 
-  registrarEgreso(dto: CreateEgresoDto): Promise<EgresoEmpleado> {
-    const egreso = this.egresoRepo.create(dto);
-    return this.egresoRepo.save(egreso);
-  }
- 
-  // --- Invocación de los procedimientos almacenados ---
- 
-  calcularAnticipo(periodo: string) {
-    return this.dataSource.query(
-      `EXEC dbo.sp_CalcularAnticipo @Periodo = @0`,
-      [periodo],
+
+  // ============================================================
+  // CALCULAR ANTICIPO
+  // ============================================================
+  async calcularAnticipo(periodoId: number) {
+    const periodo = await this.obtenerPeriodo(periodoId);
+
+    if (periodo.estado === "CERRADO") {
+      throw new BadRequestException("El periodo ya está cerrado");
+    }
+
+    const yaExiste = await this.nominaRepo.count({
+      where: { periodoId, tipoNomina: "ANTICIPO", activo: true },
+    });
+    if (yaExiste > 0) {
+      throw new BadRequestException(
+        "El anticipo ya fue calculado para este periodo",
+      );
+    }
+
+    await this.dataSource.query(
+      "EXEC dbo.sp_CalcularAnticipo @PeriodoId = @0",
+      [periodoId],
     );
+
+    return {
+      mensaje: "Anticipo calculado correctamente",
+      periodoId,
+      totalNominas: await this.nominaRepo.count({
+        where: { periodoId, tipoNomina: "ANTICIPO", activo: true },
+      }),
+    };
   }
- 
-  calcularFinMes(periodo: string) {
-    return this.dataSource.query(
-      `EXEC dbo.sp_CalcularNominaFinMes @Periodo = @0`,
-      [periodo],
+
+  // ============================================================
+  // CALCULAR NÓMINA FIN DE MES
+  // ============================================================
+  async calcularNomina(periodoId: number) {
+    const periodo = await this.obtenerPeriodo(periodoId);
+
+    if (periodo.estado === "CERRADO") {
+      throw new BadRequestException("El periodo ya está cerrado");
+    }
+
+    const yaExiste = await this.nominaRepo.count({
+      where: { periodoId, tipoNomina: "FINMES", activo: true },
+    });
+    if (yaExiste > 0) {
+      throw new BadRequestException(
+        "La nómina de fin de mes ya fue calculada para este periodo",
+      );
+    }
+
+    await this.dataSource.query(
+      "EXEC dbo.sp_CalcularNominaFinMes @PeriodoId = @0",
+      [periodoId],
     );
+
+    return {
+      mensaje: "Nómina de fin de mes calculada correctamente",
+      periodoId,
+      totalNominas: await this.nominaRepo.count({
+        where: { periodoId, tipoNomina: "FINMES", activo: true },
+      }),
+    };
   }
- 
-  cerrarNomina(periodo: string, tipoNomina: string) {
-    return this.dataSource.query(
-      `EXEC dbo.sp_CerrarNomina @Periodo = @0, @TipoNomina = @1`,
-      [periodo, tipoNomina],
+
+  // ============================================================
+  // CERRAR NÓMINA
+  // ============================================================
+  async cerrarNomina(periodoId: number, usuarioId: number) {
+    const periodo = await this.obtenerPeriodo(periodoId);
+
+    if (periodo.estado === "CERRADO") {
+      throw new BadRequestException("El periodo ya está cerrado");
+    }
+
+    const totalNominas = await this.nominaRepo.count({
+      where: { periodoId, activo: true },
+    });
+    if (totalNominas === 0) {
+      throw new BadRequestException(
+        "No hay nóminas calculadas para este periodo",
+      );
+    }
+
+    await this.dataSource.query(
+      "EXEC dbo.sp_CerrarNomina @PeriodoId = @0, @UsuarioId = @1",
+      [periodoId, usuarioId],
     );
+
+    return {
+      mensaje: "Nómina cerrada correctamente",
+      periodoId,
+      totalNominas,
+    };
   }
- 
-  // --- Consulta de nóminas ya calculadas ---
- 
-  listarPorPeriodo(periodo: string): Promise<Nomina[]> {
-    return this.nominaRepo.find({ where: { periodo } });
+
+  // ============================================================
+  // CONSULTAS
+  // ============================================================
+  async listarPorPeriodo(periodoId: number) {
+    await this.obtenerPeriodo(periodoId);
+
+    return this.nominaRepo.find({
+      where: { periodoId, activo: true },
+      relations: { empleado: true, periodo: true },
+      order: { nominaEmpleadoId: "ASC" },
+    });
+  }
+
+  async obtenerUna(nominaEmpleadoId: number) {
+    const nomina = await this.nominaRepo.findOne({
+      where: { nominaEmpleadoId, activo: true },
+      relations: {
+        empleado: true,
+        periodo: true,
+        detalles: true,
+      },
+      order: { detalles: { orden: "ASC" } },
+    });
+
+    if (!nomina) {
+      throw new NotFoundException(
+        `Nómina con id ${nominaEmpleadoId} no encontrada`,
+      );
+    }
+
+    return nomina;
+  }
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+  private async obtenerPeriodo(periodoId: number) {
+    const periodo = await this.periodoRepo.findOne({
+      where: { periodoId, activo: true },
+    });
+    if (!periodo) {
+      throw new NotFoundException(`Periodo con id ${periodoId} no encontrado`);
+    }
+    return periodo;
   }
 }

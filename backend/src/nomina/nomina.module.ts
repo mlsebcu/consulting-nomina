@@ -1,14 +1,15 @@
-import { Module } from '@nestjs/common';
-import { NominaController } from './nomina.controller';
-import { NominaService } from './nomina.service';
-import { EgresoEmpleado } from './entities/egreso-empleado.entity';
-import { Nomina } from './entities/nomina.entity';
-import { IngresoEmpleado } from './entities/ingreso-empleado.entity';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { NominaService } from "./nomina.service";
+import { NominaController } from "./nomina.controller";
+import { NominaEmpleado } from "./entities/nomina-empleado.entity";
+import { NominaDetalle } from "./entities/nomina-detalle.entity";
+import { Periodo } from "../periodos/entities/periodo.entity";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([IngresoEmpleado, EgresoEmpleado, Nomina])],
+  imports: [TypeOrmModule.forFeature([NominaEmpleado, NominaDetalle, Periodo])],
   controllers: [NominaController],
-  providers: [NominaService]
+  providers: [NominaService],
+  exports: [NominaService],
 })
 export class NominaModule {}

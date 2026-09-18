@@ -5,7 +5,7 @@ import { Roles } from '../auth/roles.decorator';
 import { Rol } from '../common/enums/rol.enum';
 import { MesQueryDto, PeriodoQueryDto } from './dto/reportes.dto';
 
-@ApiTags('reportes')
+@ApiTags('Reportes')
 @ApiBearerAuth()
 @Controller('reportes')
 export class ReportesController {

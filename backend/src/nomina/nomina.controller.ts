@@ -1,57 +1,57 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { NominaService } from './nomina.service';
-import { CreateIngresoDto } from './dto/create-ingreso.dto';
-import { Rol } from '../common/enums/rol.enum';
-import { Roles } from '../auth/roles.decorator';
-import { CreateEgresoDto } from './dto/create-egreso.dto';
-import { CalcularNominaDto } from './dto/calcular-nomina.dto';
-import { CerrarNominaDto } from './dto/cerrar-nomina.dto';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+} from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { NominaService } from "./nomina.service";
+import { CalcularAnticipoDto } from "./dto/calcular-anticipo.dto";
+import { Roles } from "../auth/roles.decorator";
+import { Rol } from "../common/enums/rol.enum";
+import { CurrentUser } from "../common/decorators/current-user.decorator";
+import type { UsuarioAutenticado } from "../common/interfaces/usuario-autenticado.interface";
+import { CalcularNominaDto } from "./dto/calcular-nomina.dto";
+import { CerrarNominaDto } from "./dto/cerrar-nomina.dto";
 
-@ApiTags('nomina')
-@Controller('nomina')
+@ApiTags("Nómina")
+@ApiBearerAuth()
+@Controller("nomina")
 export class NominaController {
-    constructor(private readonly nominaService: NominaService) {}
- 
-  // POST /nomina/ingresos
-  @Post('ingresos')
+  constructor(private readonly nominaService: NominaService) {}
+
+  @Post("anticipo")
   @Roles(Rol.ADMIN, Rol.RRHH)
-  registrarIngreso(@Body() dto: CreateIngresoDto) {
-    return this.nominaService.registrarIngreso(dto);
+  calcularAnticipo(@Body() dto: CalcularAnticipoDto) {
+    return this.nominaService.calcularAnticipo(dto.periodoId);
   }
- 
-  // POST /nomina/egresos
-  @Post('egresos')
+
+  @Post("calcular")
   @Roles(Rol.ADMIN, Rol.RRHH)
-  registrarEgreso(@Body() dto: CreateEgresoDto) {
-    return this.nominaService.registrarEgreso(dto);
+  calcularNomina(@Body() dto: CalcularNominaDto) {
+    return this.nominaService.calcularNomina(dto.periodoId);
   }
- 
-  // POST /nomina/calcular-anticipo
-  @Post('calcular-anticipo')
+
+  @Post("cerrar")
   @Roles(Rol.ADMIN)
-  calcularAnticipo(@Body() dto: CalcularNominaDto) {
-    return this.nominaService.calcularAnticipo(dto.periodo);
+  cerrarNomina(
+    @Body() dto: CerrarNominaDto,
+    @CurrentUser() user: UsuarioAutenticado,
+  ) {
+    return this.nominaService.cerrarNomina(dto.periodoId, user.usuarioId);
   }
- 
-  // POST /nomina/calcular-fin-mes
-  @Post('calcular-fin-mes')
-  @Roles(Rol.ADMIN)
-  calcularFinMes(@Body() dto: CalcularNominaDto) {
-    return this.nominaService.calcularFinMes(dto.periodo);
-  }
- 
-  // POST /nomina/cerrar
-  @Post('cerrar')
-  @Roles(Rol.ADMIN)
-  cerrarNomina(@Body() dto: CerrarNominaDto) {
-    return this.nominaService.cerrarNomina(dto.periodo, dto.tipoNomina);
-  }
- 
-  // GET /nomina?periodo=2026-09-01
-  @Get()
+
+  @Get("periodo/:periodoId")
   @Roles(Rol.ADMIN, Rol.RRHH)
-  listarPorPeriodo(@Query('periodo') periodo: string) {
-    return this.nominaService.listarPorPeriodo(periodo);
+  listarPorPeriodo(@Param("periodoId", ParseIntPipe) periodoId: number) {
+    return this.nominaService.listarPorPeriodo(periodoId);
+  }
+
+  @Get(":id")
+  @Roles(Rol.ADMIN, Rol.RRHH)
+  obtenerUna(@Param("id", ParseIntPipe) id: number) {
+    return this.nominaService.obtenerUna(id);
   }
 }
