@@ -1,43 +1,49 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ReportesService } from './reportes.service';
-import { Roles } from '../auth/roles.decorator';
-import { Rol } from '../common/enums/rol.enum';
-import { MesQueryDto, PeriodoQueryDto } from './dto/reportes.dto';
+import { Controller, Get, Param, ParseIntPipe, Query } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ReportesService } from "./reportes.service";
+import { ReporteCumpleanierosDto } from "./dto/reporte-cumpleanieros.dto";
+import { Roles } from "../auth/roles.decorator";
+import { Rol } from "../common/enums/rol.enum";
 
-@ApiTags('Reportes')
+@ApiTags("Reportes")
 @ApiBearerAuth()
-@Controller('reportes')
+@Controller("reportes")
 export class ReportesController {
-    constructor(private readonly reportesService: ReportesService) { }
+    constructor(private readonly reportesService: ReportesService) {}
 
-    @Get('cumpleanieros')
+    @Get("cumpleanieros")
     @Roles(Rol.ADMIN, Rol.RRHH)
-    cumpleanieros(@Query() query: MesQueryDto) {
-        return this.reportesService.listadoCumpleanieros(query.mes);
+    cumpleanieros(@Query() dto: ReporteCumpleanierosDto) {
+        return this.reportesService.listadoCumpleanieros(dto.mes);
     }
 
-    @Get('igss')
+    @Get("igss/:periodoId")
     @Roles(Rol.ADMIN, Rol.RRHH)
-    igss(@Query() query: PeriodoQueryDto) {
-        return this.reportesService.listadoDescuentosIGSS(query.periodo);
+    igss(@Param("periodoId", ParseIntPipe) periodoId: number) {
+        return this.reportesService.listadoIGSS(periodoId);
     }
 
-    @Get('isr')
+    @Get("isr/:periodoId")
     @Roles(Rol.ADMIN, Rol.RRHH)
-    isr(@Query() query: PeriodoQueryDto) {
-        return this.reportesService.listadoDescuentosISR(query.periodo);
+    isr(@Param("periodoId", ParseIntPipe) periodoId: number) {
+        return this.reportesService.listadoISR(periodoId);
     }
 
-    @Get('poliza')
-    @Roles(Rol.ADMIN) // información contable, solo ADMIN
-    poliza(@Query() query: PeriodoQueryDto) {
-        return this.reportesService.polizaContabilidad(query.periodo);
+    @Get("poliza/:periodoId")
+    @Roles(Rol.ADMIN, Rol.RRHH)
+    poliza(@Param("periodoId", ParseIntPipe) periodoId: number) {
+        return this.reportesService.polizaContabilidad(periodoId);
     }
 
-    @Get('libro-salarios')
+    @Get("libro-salarios/:periodoId")
     @Roles(Rol.ADMIN, Rol.RRHH)
-    libroSalarios(@Query() query: PeriodoQueryDto) {
-        return this.reportesService.libroSalarios(query.periodo);
+    libroSalarios(@Param("periodoId", ParseIntPipe) periodoId: number) {
+        return this.reportesService.libroSalarios(periodoId);
+    }
+
+    @Get("recibo/:nominaEmpleadoId")
+    @Roles(Rol.ADMIN, Rol.RRHH)
+    recibo(@Param("nominaEmpleadoId", ParseIntPipe) nominaEmpleadoId: number) {
+        return this.reportesService.reciboNomina(nominaEmpleadoId);
     }
 }
