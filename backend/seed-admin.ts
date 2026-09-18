@@ -1,10 +1,11 @@
 // Ejecutar una sola vez: npx ts-node seed-admin.ts
-// (ajusta la ruta de conexión según tu configuración real de TypeORM/DataSource)
 import 'dotenv/config';
 
 import * as bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
 import { Usuario } from './src/auth/usuario.entity';
+import { Empleado } from './src/empleados/entities/empleado.entity';
+import { Departamento } from './src/departamentos/entities/departamento.entity';
 
 async function seedAdmin() {
   const dataSource = new DataSource({
@@ -14,13 +15,13 @@ async function seedAdmin() {
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    
+
     options: {
-    encrypt: process.env.DB_ENCRYPT === 'true',
-    trustServerCertificate: process.env.DB_TRUST_CERT === 'true',
+      encrypt: process.env.DB_ENCRYPT === 'true',
+      trustServerCertificate: process.env.DB_TRUST_CERT === 'true',
     },
-    
-    entities: [Usuario],
+
+    entities: [Usuario, Empleado, Departamento],
   });
 
   await dataSource.initialize();
@@ -35,7 +36,14 @@ async function seedAdmin() {
       nombreUsuario: 'admin',
       passwordHash,
       rol: 'ADMIN',
+      empleadoId: null,
       activo: true,
+      fechaCreacion: new Date(),
+      fechaModificacion: null,
+      creadoPor: null,
+      modificadoPor: null,
+      eliminadoPor: null,
+      fechaEliminacion: null,
     });
     console.log('Usuario admin creado. Cambiar contraseña por defecto.');
   } else {
