@@ -16,11 +16,13 @@ import {
   WalletIcon,
   BarChart3Icon,
   ReceiptTextIcon,
+  ListTreeIcon,
 } from "lucide-react";
 
 const navItems = [
   { title: "Empleados", url: "/empleados", icon: UsersIcon },
   { title: "Departamentos", url: "/departamentos", icon: Building2Icon },
+  { title: "Conceptos", url: "/conceptos", icon: ListTreeIcon },
   { title: "Nómina", url: "/nomina", icon: WalletIcon },
   { title: "Reportes", url: "/reportes", icon: BarChart3Icon },
 ];

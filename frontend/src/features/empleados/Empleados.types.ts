@@ -1,26 +1,65 @@
-import type { Departamento } from "../departamentos/Departamentos.types";
-
 export interface Empleado {
-    empleadoId: number;
-    nombre: string;
-    fechaNacimiento: string;
-    fechaIngreso: string;
-    salarioBase: number;
-    diasLaborados: number;
+  empleadoId: number;
+  codigoEmpleado: string;
+  nombres: string;
+  apellidos: string;
+  dpi: string;
+  nit: string | null;
+  fechaNacimiento: string;
+  genero: string;
+  estadoCivil: string;
+  direccion: string;
+  telefonoMovil: string;
+  correoPersonal: string;
+  correoCorporativo: string;
+  contactoEmergenciaNombre: string;
+  contactoEmergenciaTelefono: string;
+  banco: string;
+  tipoCuenta: string;
+  numeroCuenta: string;
+  fechaIngreso: string;
+  fechaBaja: string | null;
+  puesto: string;
+  salarioBase: number;
+  diasLaborados: number;
+  departamentoId: number;
+  departamento?: {
     departamentoId: number;
-    departamento?: Departamento;
-    activo: boolean;
+    nombre: string;
+    cuentaContable: string;
+  };
+  activo: boolean;
+  fechaCreacion: string;
+  fechaModificacion: string | null;
+  creadoPor: number | null;
+  modificadoPor: number | null;
+  eliminadoPor: number | null;
+  fechaEliminacion: string | null;
 }
 
 export interface CreateEmpleadoDto {
-    nombre: string;
-    fechaNacimiento: string;
-    fechaIngreso: string;
-    salarioBase: number;
-    diasLaborados: number;
-    departamentoId: number;
+  codigoEmpleado: string;
+  nombres: string;
+  apellidos: string;
+  dpi: string;
+  nit?: string;
+  fechaNacimiento: string;
+  genero: string;
+  estadoCivil: string;
+  direccion: string;
+  telefonoMovil: string;
+  correoPersonal: string;
+  correoCorporativo: string;
+  contactoEmergenciaNombre: string;
+  contactoEmergenciaTelefono: string;
+  banco: string;
+  tipoCuenta: string;
+  numeroCuenta: string;
+  fechaIngreso: string;
+  puesto: string;
+  salarioBase: number;
+  diasLaborados: number;
+  departamentoId: number;
 }
 
-export interface UpdateEmpleadoDto extends CreateEmpleadoDto {
-    id: number;
-}
+export type UpdateEmpleadoDto = Partial<CreateEmpleadoDto>;

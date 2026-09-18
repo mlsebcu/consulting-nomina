@@ -11,6 +11,7 @@ import {
 const titulos: Record<string, string> = {
   "/empleados": "Empleados",
   "/departamentos": "Departamentos",
+  "/conceptos": "Conceptos",
   "/nomina": "Nómina",
   "/reportes": "Reportes",
 };
