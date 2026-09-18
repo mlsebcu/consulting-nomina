@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Empleado } from './entities/empleado.entity';
-import { CreateEmpleadoDto } from './dto/create-empleado.dto';
-import { UpdateEmpleadoDto } from './dto/update-empleado.dto';
-import { DepartamentosService } from '../departamentos/departamentos.service';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Empleado } from "./entities/empleado.entity";
+import { CreateEmpleadoDto } from "./dto/create-empleado.dto";
+import { UpdateEmpleadoDto } from "./dto/update-empleado.dto";
+import { DepartamentosService } from "../departamentos/departamentos.service";
 
 @Injectable()
 export class EmpleadosService {
@@ -16,6 +20,23 @@ export class EmpleadosService {
 
   async create(dto: CreateEmpleadoDto, usuarioId: number) {
     await this.departamentosService.findOne(dto.departamentoId);
+
+    const existeCodigo = await this.empleadoRepository.findOne({
+      where: { codigoEmpleado: dto.codigoEmpleado, activo: true },
+    });
+    if (existeCodigo) {
+      throw new ConflictException(
+        `Ya existe un empleado con código ${dto.codigoEmpleado}`,
+      );
+    }
+
+    const existeDpi = await this.empleadoRepository.findOne({
+      where: { dpi: dto.dpi, activo: true },
+    });
+
+    if (existeDpi) {
+      throw new ConflictException(`Ya existe un empleado con DPI ${dto.dpi}`);
+    }
 
     const empleado = this.empleadoRepository.create({
       ...dto,
@@ -47,6 +68,23 @@ export class EmpleadosService {
 
   async update(id: number, dto: UpdateEmpleadoDto, usuarioId: number) {
     const empleado = await this.findOne(id);
+
+    const existeCodigo = await this.empleadoRepository.findOne({
+      where: { codigoEmpleado: dto.codigoEmpleado, activo: true },
+    });
+    if (existeCodigo) {
+      throw new ConflictException(
+        `Ya existe un empleado con código ${dto.codigoEmpleado}`,
+      );
+    }
+
+    const existeDpi = await this.empleadoRepository.findOne({
+      where: { dpi: dto.dpi, activo: true },
+    });
+
+    if (existeDpi) {
+      throw new ConflictException(`Ya existe un empleado con DPI ${dto.dpi}`);
+    }
 
     if (dto.departamentoId) {
       await this.departamentosService.findOne(dto.departamentoId);
