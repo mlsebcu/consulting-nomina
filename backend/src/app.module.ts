@@ -8,6 +8,7 @@ import { DepartamentosModule } from './departamentos/departamentos.module';
 import { EmpleadosModule } from './empleados/empleados.module';
 import { NominaModule } from './nomina/nomina.module';
 import { ReportesModule } from './reportes/reportes.module';
+import { ConceptosModule } from './conceptos/conceptos.module';
 
 @Module({
   imports: [
@@ -32,12 +33,12 @@ import { ReportesModule } from './reportes/reportes.module';
       autoLoadEntities: true,
       synchronize: false,
     }),
-
     AuthModule,
     DepartamentosModule,
     EmpleadosModule,
     NominaModule,
     ReportesModule,
+    ConceptosModule,
   ],
 })
 export class AppModule {}

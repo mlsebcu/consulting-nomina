@@ -15,7 +15,7 @@ import { UpdateDepartamentoDto } from "./dto/update-departamento.dto";
 import { Roles } from "../auth/roles.decorator";
 import { Rol } from "../common/enums/rol.enum";
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import type { UsuarioAutenticado } from '../common/decorators/current-user.decorator';
+import type { UsuarioAutenticado } from "../common/interfaces/usuario-autenticado.interface";
 
 @ApiTags("Departamentos")
 @ApiBearerAuth()
