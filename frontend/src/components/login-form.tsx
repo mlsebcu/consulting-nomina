@@ -15,17 +15,29 @@ export function LoginForm({
   const [nombreUsuario, setNombreUsuario] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+    setCargando(true);
     try {
       await login(nombreUsuario, password);
       navigate("/empleados");
-    } catch {
-      setError("Usuario o contraseña incorrectos");
+    } catch (err: unknown) {
+      const axiosError = err as {
+        response?: { data?: { message?: string | string[] } };
+      };
+      const mensaje = axiosError.response?.data?.message;
+      setError(
+        Array.isArray(mensaje)
+          ? mensaje.join(", ")
+          : (mensaje ?? "Usuario o contraseña incorrectos"),
+      );
+    } finally {
+      setCargando(false);
     }
   }
 
@@ -49,6 +61,7 @@ export function LoginForm({
                   value={nombreUsuario}
                   onChange={(e) => setNombreUsuario(e.target.value)}
                   required
+                  autoComplete="username"
                 />
               </Field>
 
@@ -60,15 +73,17 @@ export function LoginForm({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={6}
+                  autoComplete="current-password"
                 />
               </Field>
 
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
+              {error && <p className="text-sm text-destructive">{error}</p>}
 
               <Field>
-                <Button type="submit">Iniciar sesión</Button>
+                <Button type="submit" disabled={cargando}>
+                  {cargando ? "Iniciando sesión..." : "Iniciar sesión"}
+                </Button>
               </Field>
             </FieldGroup>
           </form>

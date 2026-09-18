@@ -20,3 +20,7 @@ export interface CreateEmpleadoDto {
     diasLaborados: number;
     departamentoId: number;
 }
+
+export interface UpdateEmpleadoDto extends CreateEmpleadoDto {
+    id: number;
+}
