@@ -6,6 +6,7 @@ import EmpleadosPage from "../features/empleados/EmpleadosPage";
 import { ComingSoon } from "@/components/ComingSoon";
 import ConceptosPage from "@/features/conceptos/ConceptosPage";
 import PeriodosPage from "@/features/periodos/PeriodosPage";
+import NominaPage from "@/features/nomina/NominaPage";
 
 export function AppRoutes() {
     return (
@@ -19,10 +20,7 @@ export function AppRoutes() {
                 />
                 <Route path="/empleados" element={<EmpleadosPage />} />
                 <Route path="/departamentos" element={<DepartamentosPage />} />
-                <Route
-                    path="/nomina"
-                    element={<ComingSoon modulo="Nómina" />}
-                />
+                <Route path="/nomina" element={<NominaPage />} />
                 <Route
                     path="/reportes"
                     element={<ComingSoon modulo="Reportes" />}
