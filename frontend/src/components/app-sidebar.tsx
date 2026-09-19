@@ -17,12 +17,14 @@ import {
   BarChart3Icon,
   ReceiptTextIcon,
   ListTreeIcon,
+  CalendarClockIcon ,
 } from "lucide-react";
 
 const navItems = [
   { title: "Empleados", url: "/empleados", icon: UsersIcon },
   { title: "Departamentos", url: "/departamentos", icon: Building2Icon },
   { title: "Conceptos", url: "/conceptos", icon: ListTreeIcon },
+  { title: "Períodos", url: "/periodos", icon: CalendarClockIcon },
   { title: "Nómina", url: "/nomina", icon: WalletIcon },
   { title: "Reportes", url: "/reportes", icon: BarChart3Icon },
 ];

@@ -12,6 +12,7 @@ const titulos: Record<string, string> = {
   "/empleados": "Empleados",
   "/departamentos": "Departamentos",
   "/conceptos": "Conceptos",
+  "/periodos": "Períodos",
   "/nomina": "Nómina",
   "/reportes": "Reportes",
 };

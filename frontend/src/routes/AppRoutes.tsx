@@ -5,6 +5,7 @@ import DepartamentosPage from "../features/departamentos/DepartamentosPage";
 import EmpleadosPage from "../features/empleados/EmpleadosPage";
 import { ComingSoon } from "@/components/ComingSoon";
 import ConceptosPage from "@/features/conceptos/ConceptosPage";
+import PeriodosPage from "@/features/periodos/PeriodosPage";
 
 export function AppRoutes() {
     return (
@@ -27,6 +28,7 @@ export function AppRoutes() {
                     element={<ComingSoon modulo="Reportes" />}
                 />
                 <Route path="/conceptos" element={<ConceptosPage />} />
+                <Route path="/periodos" element={<PeriodosPage />} />
             </Route>
         </Routes>
     );
