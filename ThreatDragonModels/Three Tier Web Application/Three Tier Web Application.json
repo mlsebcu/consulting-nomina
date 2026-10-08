@@ -23,7 +23,7 @@
         "id": 0,
         "title": "Three Tier Web App",
         "diagramType": "STRIDE",
-        "placeholder": "New STRIDE diagram description",
+        "placeholder": "Descripción de nuevo diagrama STRIDE",
         "thumbnail": "./public/content/images/thumbnail.stride.jpg",
         "version": "2.4.0",
         "cells": [
@@ -744,7 +744,7 @@
         ]
       }
     ],
-    "diagramTop": 1,
+    "diagramTop": 2,
     "reviewer": "A product security team",
     "threatTop": 2
   }
