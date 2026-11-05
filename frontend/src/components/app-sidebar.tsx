@@ -1,72 +1,64 @@
-import * as React from "react";
+import type { ComponentProps } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { ReceiptTextIcon } from "lucide-react";
 import { NavUser } from "@/components/nav-user";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  UsersIcon,
-  Building2Icon,
-  WalletIcon,
-  BarChart3Icon,
-  ReceiptTextIcon,
-  ListTreeIcon,
-  CalendarClockIcon ,
-} from "lucide-react";
+import { NAVEGACION, RUTA_INICIAL } from "@/routes/navegacion";
 
-const navItems = [
-  { title: "Empleados", url: "/empleados", icon: UsersIcon },
-  { title: "Departamentos", url: "/departamentos", icon: Building2Icon },
-  { title: "Conceptos", url: "/conceptos", icon: ListTreeIcon },
-  { title: "Períodos", url: "/periodos", icon: CalendarClockIcon },
-  { title: "Nómina", url: "/nomina", icon: WalletIcon },
-  { title: "Reportes", url: "/reportes", icon: BarChart3Icon },
-];
+export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
+    const { pathname } = useLocation();
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const location = useLocation();
-
-  return (
-    <Sidebar variant="inset" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<NavLink to="/empleados" />}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <ReceiptTextIcon className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">Consulting, S.A.</span>
-                <span className="truncate text-xs">Sistema de Nóminas</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarMenu>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.url}>
-              <SidebarMenuButton
-                isActive={location.pathname.startsWith(item.url)}
-                render={<NavLink to={item.url} />}
-              >
-                <item.icon />
-                <span>{item.title}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser />
-      </SidebarFooter>
-    </Sidebar>
-  );
+    return (
+        <Sidebar variant="inset" className="print:hidden" {...props}>
+            <SidebarHeader>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton size="lg" render={<NavLink to={RUTA_INICIAL} />}>
+                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                                <ReceiptTextIcon className="size-4" />
+                            </div>
+                            <div className="grid flex-1 text-left text-sm leading-tight">
+                                <span className="truncate font-medium">Consulting, S.A.</span>
+                                <span className="truncate text-xs">Sistema de Nóminas</span>
+                            </div>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarHeader>
+            <SidebarContent>
+                {NAVEGACION.map((grupo) => (
+                    <SidebarGroup key={grupo.titulo}>
+                        <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
+                        <SidebarMenu>
+                            {grupo.items.map((item) => (
+                                <SidebarMenuItem key={item.url}>
+                                    <SidebarMenuButton
+                                        isActive={pathname.startsWith(item.url)}
+                                        tooltip={item.titulo}
+                                        render={<NavLink to={item.url} />}
+                                    >
+                                        <item.icono />
+                                        <span>{item.titulo}</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroup>
+                ))}
+            </SidebarContent>
+            <SidebarFooter>
+                <NavUser />
+            </SidebarFooter>
+        </Sidebar>
+    );
 }

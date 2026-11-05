@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { NominaEmpleado } from "../Nomina.types";
-import { nominaApi } from "../Nomina.api";
+import { Loader2, PrinterIcon } from "lucide-react";
+import { EstadoBadge } from "@/components/EstadoBadge";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -10,230 +10,159 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
-import { formatMoneda, formatFecha } from "@/utils/formatters";
+import { formatMoneda } from "@/utils/formatters";
+import { nombrePeriodo, rangoPeriodo } from "@/utils/periodos";
+import { nominaApi } from "../Nomina.api";
+import type { NominaDetalle, NominaEmpleado } from "../Nomina.types";
 
 interface Props {
     nominaId: number | null;
-    open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
-export function NominaDetalleDialog({ nominaId, open, onOpenChange }: Props) {
+function Lineas({ titulo, lineas, total }: { titulo: string; lineas: NominaDetalle[]; total: number }) {
+    return (
+        <div className="space-y-2">
+            <h4 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{titulo}</h4>
+            {lineas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sin movimientos</p>
+            ) : (
+                <ul className="space-y-1 text-sm">
+                    {lineas.map((l) => (
+                        <li key={l.nominaDetalleId} className="flex justify-between gap-4">
+                            <span>
+                                {l.conceptoNombre}
+                                {l.cantidad !== null && (
+                                    <span className="text-muted-foreground"> ({l.cantidad} h)</span>
+                                )}
+                            </span>
+                            <span className="tabular-nums">{formatMoneda(l.monto)}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <Separator />
+            <div className="flex justify-between text-sm font-semibold">
+                <span>Total</span>
+                <span className="tabular-nums">{formatMoneda(total)}</span>
+            </div>
+        </div>
+    );
+}
+
+export function NominaDetalleDialog({ nominaId, onOpenChange }: Props) {
     const [nomina, setNomina] = useState<NominaEmpleado | null>(null);
-    const [cargando, setCargando] = useState(false);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
-        if (open && nominaId) {
-            cargar();
-        } else {
-            setNomina(null);
-        }
-    }, [open, nominaId]);
-
-    async function cargar() {
         if (!nominaId) return;
-        setCargando(true);
-        try {
-            setNomina(await nominaApi.obtenerUna(nominaId));
-        } catch {
-            setNomina(null);
-        } finally {
-            setCargando(false);
-        }
-    }
+        let vigente = true;
+        setNomina(null);
+        setError(false);
+        nominaApi
+            .obtenerUna(nominaId)
+            .then((data) => vigente && setNomina(data))
+            .catch(() => vigente && setError(true));
+        return () => {
+            vigente = false;
+        };
+    }, [nominaId]);
 
-    function colorNaturaleza(codigo: string) {
-        switch (codigo) {
-            case "PERCEPCION":
-                return "bg-green-100 text-green-800 hover:bg-green-100";
-            case "DEDUCCION":
-                return "bg-red-100 text-red-800 hover:bg-red-100";
-            case "PROVISION":
-                return "bg-blue-100 text-blue-800 hover:bg-blue-100";
-            default:
-                return "bg-gray-100 text-gray-800 hover:bg-gray-100";
-        }
-    }
+    const detalles = nomina?.detalles ?? [];
+    const porNaturaleza = (codigo: string) => detalles.filter((d) => d.naturalezaCodigo === codigo);
+    const esAnticipo = nomina?.tipoNomina === "ANTICIPO";
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <Dialog open={!!nominaId} onOpenChange={onOpenChange}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Detalle de Nómina</DialogTitle>
+                    <DialogTitle>Recibo de pago</DialogTitle>
                     <DialogDescription>
-                        Recibo detallado con cada concepto aplicado.
+                        {nomina?.periodo
+                            ? `${esAnticipo ? "Anticipo" : "Nómina de fin de mes"}, ${nombrePeriodo(nomina.periodo)}`
+                            : "Detalle de conceptos aplicados al empleado."}
                     </DialogDescription>
                 </DialogHeader>
 
-                {cargando ? (
-                    <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
+                {error ? (
+                    <p className="py-8 text-center text-muted-foreground">No se pudo cargar el recibo.</p>
                 ) : !nomina ? (
-                    <div className="text-center text-muted-foreground py-8">
-                        No se pudo cargar la nómina.
+                    <div className="flex justify-center py-8">
+                        <Loader2 className="size-6 animate-spin text-muted-foreground" />
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        {/* Cabecera */}
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-6">
+                        <div className="grid gap-4 rounded-lg bg-muted/50 p-4 text-sm sm:grid-cols-2">
                             <div>
+                                <p className="font-semibold">
+                                    {nomina.empleado?.nombres} {nomina.empleado?.apellidos}
+                                </p>
                                 <p className="text-muted-foreground">
-                                    Empleado
+                                    {nomina.empleado?.codigoEmpleado} · {nomina.empleado?.puesto}
                                 </p>
-                                <p className="font-medium">
-                                    {nomina.empleado
-                                        ? `${nomina.empleado.nombres} ${nomina.empleado.apellidos}`
-                                        : `#${nomina.empleadoId}`}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {nomina.empleado?.codigoEmpleado} —{" "}
-                                    {nomina.empleado?.puesto}
-                                </p>
+                                <p className="text-muted-foreground">{nomina.empleado?.departamento?.nombre}</p>
                             </div>
-                            <div>
-                                <p className="text-muted-foreground">Período</p>
-                                <p className="font-medium">
-                                    {nomina.periodo
-                                        ? `#${nomina.periodo.numeroPeriodo} — ${nomina.periodo.anio}`
-                                        : `#${nomina.periodoId}`}
+                            <div className="sm:text-right">
+                                <p className="text-muted-foreground">
+                                    {nomina.periodo && rangoPeriodo(nomina.periodo)}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {nomina.tipoNomina} —{" "}
-                                    {nomina.periodo
-                                        ? `${formatFecha(nomina.periodo.fechaInicio)} → ${formatFecha(nomina.periodo.fechaFin)}`
-                                        : "-"}
-                                </p>
+                                <p className="text-muted-foreground">Días laborados: {nomina.diasLaborados}</p>
+                                <EstadoBadge estado={nomina.estado} className="mt-1" />
                             </div>
                         </div>
 
-                        <Separator />
-
-                        {/* Totales */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                                <p className="text-muted-foreground">
-                                    Percepciones
-                                </p>
-                                <p className="font-semibold text-green-700">
-                                    {formatMoneda(nomina.totalPercepciones)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-muted-foreground">
-                                    Deducciones
-                                </p>
-                                <p className="font-semibold text-red-700">
-                                    {formatMoneda(nomina.totalDeducciones)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-muted-foreground">
-                                    Provisiones
-                                </p>
-                                <p className="font-semibold text-blue-700">
-                                    {formatMoneda(nomina.totalProvisiones)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-muted-foreground">Líquido</p>
-                                <p className="font-semibold text-lg">
-                                    {formatMoneda(nomina.liquido)}
-                                </p>
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Detalle por concepto */}
-                        <div>
-                            <h4 className="text-sm font-semibold mb-2">
-                                Conceptos aplicados
-                            </h4>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Código</TableHead>
-                                        <TableHead>Concepto</TableHead>
-                                        <TableHead>Naturaleza</TableHead>
-                                        <TableHead className="text-right">
-                                            Monto
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {!nomina.detalles ||
-                                    nomina.detalles.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={4}
-                                                className="text-center text-muted-foreground py-4"
-                                            >
-                                                No hay conceptos registrados
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        nomina.detalles.map((d) => (
-                                            <TableRow key={d.nominaDetalleId}>
-                                                <TableCell className="font-mono text-xs">
-                                                    {d.conceptoCodigo}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {d.conceptoNombre}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge
-                                                        className={colorNaturaleza(
-                                                            d.naturalezaCodigo,
-                                                        )}
-                                                    >
-                                                        {d.naturalezaCodigo}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-sm">
-                                                    {formatMoneda(d.monto)}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        {nomina.anticipo > 0 && (
+                        {esAnticipo ? (
+                            <Lineas titulo="Anticipo" lineas={detalles} total={nomina.liquido} />
+                        ) : (
                             <>
-                                <Separator />
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">
-                                        Anticipo descontado
-                                    </span>
-                                    <span className="font-mono font-semibold text-red-700">
-                                        -{formatMoneda(nomina.anticipo)}
-                                    </span>
+                                <div className="grid gap-6 sm:grid-cols-2">
+                                    <Lineas
+                                        titulo="Ingresos"
+                                        lineas={porNaturaleza("PERCEPCION")}
+                                        total={nomina.totalPercepciones}
+                                    />
+                                    <Lineas
+                                        titulo="Descuentos"
+                                        lineas={porNaturaleza("DEDUCCION")}
+                                        total={nomina.totalDeducciones}
+                                    />
                                 </div>
+
+                                <div className="space-y-1 rounded-lg border p-4 text-sm">
+                                    <div className="flex justify-between">
+                                        <span>Ingresos menos descuentos</span>
+                                        <span className="tabular-nums">
+                                            {formatMoneda(nomina.totalPercepciones - nomina.totalDeducciones)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                        <span>Anticipo recibido el día 15</span>
+                                        <span className="tabular-nums">- {formatMoneda(nomina.anticipo)}</span>
+                                    </div>
+                                    <Separator className="my-2" />
+                                    <div className="flex justify-between text-base font-semibold">
+                                        <span>Líquido a recibir</span>
+                                        <span className="tabular-nums">{formatMoneda(nomina.liquido)}</span>
+                                    </div>
+                                </div>
+
+                                <Lineas
+                                    titulo="Provisiones patronales (no afectan el líquido)"
+                                    lineas={porNaturaleza("PROVISION")}
+                                    total={nomina.totalProvisiones}
+                                />
                             </>
                         )}
                     </div>
                 )}
 
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Cerrar
+                <DialogFooter className="print:hidden">
+                    <Button variant="outline" onClick={() => window.print()} disabled={!nomina}>
+                        <PrinterIcon />
+                        Imprimir
                     </Button>
+                    <Button onClick={() => onOpenChange(false)}>Cerrar</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

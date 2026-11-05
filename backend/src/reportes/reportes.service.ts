@@ -1,196 +1,116 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { DataSource } from "typeorm";
+import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { CONCEPTO_SISTEMA } from '../common/constants/conceptos-sistema';
+import { mapRows } from '../database/row-mapper';
+import { NominaService } from '../nomina/nomina.service';
+import { PeriodosService } from '../periodos/periodos.service';
+import type {
+  Cumpleaniero,
+  FilaDescuento,
+  FilaLibroSalarios,
+  FilaPoliza,
+  TotalDepartamento,
+} from './reportes.types';
+
+const CENTAVOS = 100;
+
+function redondear(valor: number): number {
+  return Math.round(valor * CENTAVOS) / CENTAVOS;
+}
+
+function sumar<T>(filas: T[], campo: (fila: T) => number): number {
+  return redondear(filas.reduce((total, fila) => total + campo(fila), 0));
+}
 
 @Injectable()
 export class ReportesService {
-    constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly periodosService: PeriodosService,
+    private readonly nominaService: NominaService,
+  ) {}
 
-    // ============================================================
-    // CUMPLEAÑEROS
-    // ============================================================
-    async listadoCumpleanieros(mes: number) {
-        const lista = await this.dataSource.query(
-            "EXEC dbo.sp_ListadoCumpleanieros @Mes = @0",
-            [mes],
-        );
+  async listadoCumpleanieros(mes: number) {
+    const lista = await this.consultar<Cumpleaniero>(
+      'fn_listado_cumpleanieros',
+      mes,
+    );
+    return { lista };
+  }
 
-        return {
-            lista: Array.isArray(lista) ? lista : [],
-        };
+  async listadoIGSS(periodoId: number) {
+    return this.listadoDescuento(periodoId, CONCEPTO_SISTEMA.IGSS);
+  }
+
+  async listadoISR(periodoId: number) {
+    return this.listadoDescuento(periodoId, CONCEPTO_SISTEMA.ISR);
+  }
+
+  async polizaContabilidad(periodoId: number) {
+    await this.periodosService.findOne(periodoId);
+    const lista = await this.consultar<FilaPoliza>(
+      'fn_poliza_contabilidad',
+      periodoId,
+    );
+    const debe = sumar(lista, (f) => f.debe);
+    const haber = sumar(lista, (f) => f.haber);
+
+    return { lista, totales: { debe, haber, cuadra: debe === haber } };
+  }
+
+  async libroSalarios(periodoId: number) {
+    await this.periodosService.findOne(periodoId);
+    const lista = await this.consultar<FilaLibroSalarios>(
+      'fn_libro_salarios',
+      periodoId,
+    );
+
+    const porDepartamento = new Map<string, FilaLibroSalarios[]>();
+    for (const fila of lista) {
+      porDepartamento.set(fila.departamento, [
+        ...(porDepartamento.get(fila.departamento) ?? []),
+        fila,
+      ]);
     }
 
-    // ============================================================
-    // IGSS
-    // ============================================================
-    async listadoIGSS(periodoId: number) {
-        const filas = await this.dataSource.query<Array<{ MontoIGSS: number }>>(
-            "EXEC dbo.sp_ListadoDescuentosIGSS @PeriodoId = @0",
-            [periodoId],
-        );
+    const totales: TotalDepartamento[] = [...porDepartamento.entries()].map(
+      ([departamento, filas]) => ({
+        departamento,
+        totalEmpleados: filas.length,
+        totalIngresos: sumar(filas, (f) => f.ingresos),
+        totalEgresos: sumar(filas, (f) => f.egresos),
+        totalProvisiones: sumar(filas, (f) => f.provisiones),
+        totalAnticipo: sumar(filas, (f) => f.anticipo),
+        totalLiquido: sumar(filas, (f) => f.liquido),
+      }),
+    );
 
-        const lista = Array.isArray(filas) ? filas : [];
-        const totalIGSS = lista.reduce(
-            (sum, r) => sum + Number(r.MontoIGSS ?? 0),
-            0,
-        );
+    return { lista, totales };
+  }
 
-        return {
-            lista,
-            total: { totalIGSS: Number(totalIGSS.toFixed(2)) },
-        };
-    }
+  reciboNomina(nominaEmpleadoId: number) {
+    return this.nominaService.obtenerUna(nominaEmpleadoId);
+  }
 
-    // ============================================================
-    // ISR
-    // ============================================================
-    async listadoISR(periodoId: number) {
-        const filas = await this.dataSource.query<Array<{ MontoISR: number }>>(
-            "EXEC dbo.sp_ListadoDescuentosISR @PeriodoId = @0",
-            [periodoId],
-        );
+  private async listadoDescuento(periodoId: number, conceptoCodigo: string) {
+    await this.periodosService.findOne(periodoId);
+    const lista = await this.consultar<FilaDescuento>(
+      'fn_listado_descuento',
+      periodoId,
+      conceptoCodigo,
+    );
+    return { lista, total: sumar(lista, (f) => f.monto) };
+  }
 
-        const lista = Array.isArray(filas) ? filas : [];
-        const totalISR = lista.reduce(
-            (sum, r) => sum + Number(r.MontoISR ?? 0),
-            0,
-        );
-
-        return {
-            lista,
-            total: { totalISR: Number(totalISR.toFixed(2)) },
-        };
-    }
-
-    // ============================================================
-    // PÓLIZA CONTABLE
-    // ============================================================
-    async polizaContabilidad(periodoId: number) {
-        const filas = await this.dataSource.query<
-            Array<{ Debe: number; Haber: number }>
-        >("EXEC dbo.sp_PolizaContabilidad @PeriodoId = @0", [periodoId]);
-
-        const lista = Array.isArray(filas) ? filas : [];
-        const totalDebe = lista.reduce(
-            (sum, r) => sum + Number(r.Debe ?? 0),
-            0,
-        );
-        const totalHaber = lista.reduce(
-            (sum, r) => sum + Number(r.Haber ?? 0),
-            0,
-        );
-
-        return {
-            lista,
-            totales: {
-                debe: Number(totalDebe.toFixed(2)),
-                haber: Number(totalHaber.toFixed(2)),
-                cuadra: Math.abs(totalDebe - totalHaber) < 0.01,
-            },
-        };
-    }
-
-    // ============================================================
-    // LIBRO DE SALARIOS
-    // ============================================================
-    async libroSalarios(periodoId: number) {
-        const filas = await this.dataSource.query<
-            Array<{
-                Departamento: string;
-                TotalPercepciones: number;
-                TotalDeducciones: number;
-                TotalProvisiones: number;
-                Anticipo: number;
-                Liquido: number;
-            }>
-        >("EXEC dbo.sp_LibroSalarios @PeriodoId = @0", [periodoId]);
-
-        const lista = Array.isArray(filas) ? filas : [];
-
-        // Agrupar por departamento
-        const porDepartamento = new Map<
-            string,
-            {
-                Departamento: string;
-                TotalEmpleados: number;
-                TotalIngresos: number;
-                TotalEgresos: number;
-                TotalProvisiones: number;
-                TotalAnticipo: number;
-                TotalLiquido: number;
-            }
-        >();
-
-        for (const fila of lista) {
-            const key = fila.Departamento;
-            const actual = porDepartamento.get(key) ?? {
-                Departamento: key,
-                TotalEmpleados: 0,
-                TotalIngresos: 0,
-                TotalEgresos: 0,
-                TotalProvisiones: 0,
-                TotalAnticipo: 0,
-                TotalLiquido: 0,
-            };
-
-            actual.TotalEmpleados += 1;
-            actual.TotalIngresos += Number(fila.TotalPercepciones ?? 0);
-            actual.TotalEgresos += Number(fila.TotalDeducciones ?? 0);
-            actual.TotalProvisiones += Number(fila.TotalProvisiones ?? 0);
-            actual.TotalAnticipo += Number(fila.Anticipo ?? 0);
-            actual.TotalLiquido += Number(fila.Liquido ?? 0);
-
-            porDepartamento.set(key, actual);
-        }
-
-        return {
-            lista,
-            totales: Array.from(porDepartamento.values()).map((t) => ({
-                ...t,
-                TotalIngresos: Number(t.TotalIngresos.toFixed(2)),
-                TotalEgresos: Number(t.TotalEgresos.toFixed(2)),
-                TotalProvisiones: Number(t.TotalProvisiones.toFixed(2)),
-                TotalAnticipo: Number(t.TotalAnticipo.toFixed(2)),
-                TotalLiquido: Number(t.TotalLiquido.toFixed(2)),
-            })),
-        };
-    }
-
-    // ============================================================
-    // RECIBO DE NÓMINA (mantiene 2 result sets)
-    // ============================================================
-    async reciboNomina(nominaEmpleadoId: number) {
-        const resultSets = await this.dataSource.query(
-            "EXEC dbo.sp_ReciboNomina @NominaEmpleadoId = @0",
-            [nominaEmpleadoId],
-        );
-
-        const cabecera = this.primerResultSet(resultSets);
-        if (!cabecera) {
-            throw new NotFoundException(
-                `Nómina con id ${nominaEmpleadoId} no encontrada`,
-            );
-        }
-
-        return {
-            cabecera,
-            detalle: this.segundoResultSet(resultSets),
-        };
-    }
-
-    // ============================================================
-    // HELPERS (solo para recibo)
-    // ============================================================
-    private primerResultSet(resultSets: unknown): unknown {
-        if (!Array.isArray(resultSets) || resultSets.length === 0) return null;
-        const first = resultSets[0];
-        if (Array.isArray(first)) return first[0] ?? null;
-        return first;
-    }
-
-    private segundoResultSet(resultSets: unknown): unknown[] {
-        if (!Array.isArray(resultSets) || resultSets.length < 2) return [];
-        const second = resultSets[1];
-        if (Array.isArray(second)) return second;
-        return [second];
-    }
+  private async consultar<T>(
+    funcion: string,
+    ...parametros: (number | string)[]
+  ) {
+    const placeholders = parametros.map((_, i) => `$${i + 1}`).join(', ');
+    const filas = await this.dataSource.query<Record<string, unknown>[]>(
+      `SELECT * FROM ${funcion}(${placeholders})`,
+      parametros,
+    );
+    return mapRows<T>(filas);
+  }
 }

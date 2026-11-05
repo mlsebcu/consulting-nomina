@@ -18,6 +18,11 @@ import {
 } from "@/components/ui/sidebar";
 import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react";
 
+const ETIQUETA_ROL = {
+  ADMIN: "Administrador",
+  RRHH: "Recursos Humanos",
+} as const;
+
 export function NavUser() {
   const { isMobile } = useSidebar();
   const { usuario, logout } = useAuth();
@@ -29,7 +34,7 @@ export function NavUser() {
 
   function handleLogout() {
     logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   }
 
   return (
@@ -44,7 +49,7 @@ export function NavUser() {
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{usuario.nombreUsuario}</span>
-              <span className="truncate text-xs capitalize">{usuario.rol}</span>
+              <span className="truncate text-xs">{ETIQUETA_ROL[usuario.rol]}</span>
             </div>
             <ChevronsUpDownIcon className="ml-auto size-4" />
           </DropdownMenuTrigger>
@@ -62,7 +67,7 @@ export function NavUser() {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{usuario.nombreUsuario}</span>
-                    <span className="truncate text-xs capitalize">{usuario.rol}</span>
+                    <span className="truncate text-xs">{ETIQUETA_ROL[usuario.rol]}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>

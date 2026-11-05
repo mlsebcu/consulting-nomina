@@ -1,28 +1,37 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES_KEY } from './roles.decorator';
 import { IS_PUBLIC_KEY } from '../common/decorators/public.decorator';
+import type { Rol } from '../common/enums/rol.enum';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { ROLES_KEY } from './roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (isPublic) return true;
+    const targets = [context.getHandler(), context.getClass()];
 
-    const rolesPermitidos = this.reflector.getAllAndOverride<string[]>(
+    if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, targets)) {
+      return true;
+    }
+
+    const rolesPermitidos = this.reflector.getAllAndOverride<Rol[]>(
       ROLES_KEY,
-      [context.getHandler(), context.getClass()],
+      targets,
     );
+    if (!rolesPermitidos) {
+      return true;
+    }
 
-    if (!rolesPermitidos) return true;
-
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
+    const { user } = context
+      .switchToHttp()
+      .getRequest<{ user?: UsuarioAutenticado }>();
 
     if (!user || !rolesPermitidos.includes(user.rol)) {
       throw new ForbiddenException('No tiene permisos para esta acción');

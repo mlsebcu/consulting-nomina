@@ -1,43 +1,53 @@
-import { useCallback, useEffect, useState } from "react";
-import type { NominaEmpleado } from "./Nomina.types";
-import { nominaApi } from "./Nomina.api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { mensajeError } from "@/utils/errores";
+import type { Periodo } from "../periodos/Periodos.types";
 import { CalculoPanel } from "./components/CalculoPanel";
-import { NominaLista } from "./components/NominaLista";
 import { NominaDetalleDialog } from "./components/NominaDetalleDialog";
+import { NominaLista } from "./components/NominaLista";
+import { nominaApi } from "./Nomina.api";
+import type { NominaEmpleado } from "./Nomina.types";
 
 export default function NominaPage() {
+    const [periodo, setPeriodo] = useState<Periodo | null>(null);
     const [nominas, setNominas] = useState<NominaEmpleado[]>([]);
     const [cargando, setCargando] = useState(false);
-    const [periodoId, setPeriodoId] = useState<number | null>(null);
     const [detalleId, setDetalleId] = useState<number | null>(null);
 
-    const cargarNominas = useCallback(async (id: number) => {
+    const cargarNominas = useCallback(async (periodoId: number) => {
         setCargando(true);
         try {
-            setNominas(await nominaApi.listarPorPeriodo(id));
-        } catch {
+            setNominas(await nominaApi.listarPorPeriodo(periodoId));
+        } catch (err) {
             setNominas([]);
+            toast.error(mensajeError(err, "No se pudieron cargar las nóminas."));
         } finally {
             setCargando(false);
         }
     }, []);
 
     useEffect(() => {
-        if (periodoId) {
-            cargarNominas(periodoId);
-        }
-    }, [periodoId, cargarNominas]);
+        if (periodo) void cargarNominas(periodo.periodoId);
+    }, [periodo, cargarNominas]);
 
-    function handleCalculo(id: number) {
-        setPeriodoId(id);
-        cargarNominas(id);
-    }
+    const resumen = useMemo(
+        () => ({
+            anticipos: nominas.filter((n) => n.tipoNomina === "ANTICIPO").length,
+            finMes: nominas.filter((n) => n.tipoNomina === "FINMES").length,
+        }),
+        [nominas],
+    );
 
     return (
-        <div className="space-y-6">
-            <CalculoPanel onCalculo={handleCalculo} />
+        <div className="space-y-4">
+            <CalculoPanel
+                periodo={periodo}
+                resumen={resumen}
+                onPeriodoChange={setPeriodo}
+                onProcesado={() => periodo && cargarNominas(periodo.periodoId)}
+            />
 
-            {periodoId && (
+            {periodo && (
                 <NominaLista
                     nominas={nominas}
                     cargando={cargando}
@@ -47,7 +57,6 @@ export default function NominaPage() {
 
             <NominaDetalleDialog
                 nominaId={detalleId}
-                open={!!detalleId}
                 onOpenChange={(open) => !open && setDetalleId(null)}
             />
         </div>

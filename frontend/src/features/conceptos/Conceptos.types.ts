@@ -1,6 +1,3 @@
-// ============================================================
-// NATURALEZAS
-// ============================================================
 export interface NaturalezaConcepto {
     naturalezaId: number;
     codigo: string;
@@ -27,15 +24,12 @@ export interface CreateNaturalezaDto {
 
 export type UpdateNaturalezaDto = Partial<CreateNaturalezaDto>;
 
-// ============================================================
-// CONCEPTOS
-// ============================================================
 export interface Concepto {
     conceptoId: number;
     codigo: string;
     nombre: string;
     naturalezaId: number;
-    naturaleza?: NaturalezaConcepto
+    naturaleza?: NaturalezaConcepto;
     tipoCalculo: "FIJO" | "PORCENTAJE" | "FORMULA" | "MANUAL";
     cuentaContable: string | null;
     orden: number;
@@ -56,14 +50,10 @@ export interface CreateConceptoDto {
     tipoCalculo: string;
     cuentaContable?: string;
     orden?: number;
-    esSistema?: boolean;
 }
 
 export type UpdateConceptoDto = Partial<CreateConceptoDto>;
 
-// ============================================================
-// REGLAS FISCALES
-// ============================================================
 export interface ConceptoReglaFiscal {
     conceptoReglaFiscalId: number;
     conceptoId: number;

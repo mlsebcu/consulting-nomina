@@ -20,3 +20,7 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Documentación local y herramientas del editor
+*.md
+.claude/

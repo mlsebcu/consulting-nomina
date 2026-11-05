@@ -3,55 +3,67 @@ import {
   Controller,
   Get,
   Param,
+  ParseEnumPipe,
   ParseIntPipe,
   Post,
-} from "@nestjs/common";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { NominaService } from "./nomina.service";
-import { CalcularAnticipoDto } from "./dto/calcular-anticipo.dto";
-import { Roles } from "../auth/roles.decorator";
-import { Rol } from "../common/enums/rol.enum";
-import { CurrentUser } from "../common/decorators/current-user.decorator";
-import type { UsuarioAutenticado } from "../common/interfaces/usuario-autenticado.interface";
-import { CalcularNominaDto } from "./dto/calcular-nomina.dto";
-import { CerrarNominaDto } from "./dto/cerrar-nomina.dto";
+  Query,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../auth/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { TipoNomina } from '../common/enums/nomina.enums';
+import { Rol } from '../common/enums/rol.enum';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { PeriodoNominaDto } from './dto/periodo-nomina.dto';
+import { NominaService } from './nomina.service';
 
-@ApiTags("Nómina")
+@ApiTags('Nómina')
 @ApiBearerAuth()
-@Controller("nomina")
+@Controller('nomina')
 export class NominaController {
   constructor(private readonly nominaService: NominaService) {}
 
-  @Post("anticipo")
+  @Post('anticipo')
   @Roles(Rol.ADMIN, Rol.RRHH)
-  calcularAnticipo(@Body() dto: CalcularAnticipoDto) {
-    return this.nominaService.calcularAnticipo(dto.periodoId);
+  calcularAnticipo(
+    @Body() dto: PeriodoNominaDto,
+    @CurrentUser() user: UsuarioAutenticado,
+  ) {
+    return this.nominaService.calcularAnticipo(dto.periodoId, user.usuarioId);
   }
 
-  @Post("calcular")
+  @Post('calcular')
   @Roles(Rol.ADMIN, Rol.RRHH)
-  calcularNomina(@Body() dto: CalcularNominaDto) {
-    return this.nominaService.calcularNomina(dto.periodoId);
+  calcularNomina(
+    @Body() dto: PeriodoNominaDto,
+    @CurrentUser() user: UsuarioAutenticado,
+  ) {
+    return this.nominaService.calcularNomina(dto.periodoId, user.usuarioId);
   }
 
-  @Post("cerrar")
+  @Post('cerrar')
   @Roles(Rol.ADMIN)
   cerrarNomina(
-    @Body() dto: CerrarNominaDto,
+    @Body() dto: PeriodoNominaDto,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
     return this.nominaService.cerrarNomina(dto.periodoId, user.usuarioId);
   }
 
-  @Get("periodo/:periodoId")
+  @Get('periodo/:periodoId')
   @Roles(Rol.ADMIN, Rol.RRHH)
-  listarPorPeriodo(@Param("periodoId", ParseIntPipe) periodoId: number) {
-    return this.nominaService.listarPorPeriodo(periodoId);
+  @ApiQuery({ name: 'tipo', enum: TipoNomina, required: false })
+  listarPorPeriodo(
+    @Param('periodoId', ParseIntPipe) periodoId: number,
+    @Query('tipo', new ParseEnumPipe(TipoNomina, { optional: true }))
+    tipo?: TipoNomina,
+  ) {
+    return this.nominaService.listarPorPeriodo(periodoId, tipo);
   }
 
-  @Get(":id")
+  @Get(':id')
   @Roles(Rol.ADMIN, Rol.RRHH)
-  obtenerUna(@Param("id", ParseIntPipe) id: number) {
+  obtenerUna(@Param('id', ParseIntPipe) id: number) {
     return this.nominaService.obtenerUna(id);
   }
 }

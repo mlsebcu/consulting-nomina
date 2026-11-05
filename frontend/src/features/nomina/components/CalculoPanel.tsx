@@ -1,9 +1,19 @@
-import { useEffect, useState } from "react";
-import type { Periodo } from "../../periodos/Periodos.types";
-import { periodosApi } from "../../periodos/Periodos.api";
-import { nominaApi } from "../Nomina.api";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import {
+    Calculator,
+    CheckCircle2Icon,
+    CircleIcon,
+    ClipboardListIcon,
+    HandCoinsIcon,
+    LockIcon,
+    type LucideIcon,
+} from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { EstadoBadge } from "@/components/EstadoBadge";
+import { PeriodoSelect } from "@/components/PeriodoSelect";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
     Card,
     CardContent,
@@ -11,258 +21,235 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calculator, Lock, Loader2, CalendarDays } from "lucide-react";
-import { formatFecha } from "@/utils/formatters";
+import { useAuth } from "@/context/AuthContext";
+import { cn } from "@/lib/utils";
+import { mensajeError } from "@/utils/errores";
+import { rangoPeriodo } from "@/utils/periodos";
+import type { Periodo } from "../../periodos/Periodos.types";
+import { nominaApi } from "../Nomina.api";
 
-const MESES = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
-];
+type Accion = "anticipo" | "finmes" | "cerrar";
+
+const CONFIRMACIONES: Record<Accion, { titulo: string; descripcion: string; boton: string }> = {
+    anticipo: {
+        titulo: "Calcular anticipo del día 15",
+        descripcion:
+            "Se pagará el porcentaje de anticipo configurado sobre el salario base de cada empleado activo. Si ya existía un anticipo para este período, se reemplaza.",
+        boton: "Calcular anticipo",
+    },
+    finmes: {
+        titulo: "Calcular nómina de fin de mes",
+        descripcion:
+            "Se calcularán salario, bonificación decreto, novedades, IGSS, ISR y provisiones, descontando el anticipo del mes. Puede recalcular las veces que necesite mientras el período esté abierto.",
+        boton: "Calcular nómina",
+    },
+    cerrar: {
+        titulo: "Cerrar período",
+        descripcion:
+            "Después del cierre no se podrán modificar novedades ni recalcular la nómina. Verifique los reportes antes de continuar.",
+        boton: "Cerrar período",
+    },
+};
 
 interface Props {
-    onCalculo: (periodoId: number) => void;
+    periodo: Periodo | null;
+    resumen: { anticipos: number; finMes: number };
+    onPeriodoChange: (periodo: Periodo) => void;
+    onProcesado: () => void;
 }
 
-export function CalculoPanel({ onCalculo }: Props) {
-    const [periodos, setPeriodos] = useState<Periodo[]>([]);
-    const [periodoId, setPeriodoId] = useState<number | null>(null);
-    const [error, setError] = useState("");
-    const [cargando, setCargando] = useState(false);
-    const [accion, setAccion] = useState<
-        "anticipo" | "nomina" | "cerrar" | null
-    >(null);
-    const [confirmar, setConfirmar] = useState<
-        "anticipo" | "nomina" | "cerrar" | null
-    >(null);
+function Paso({
+    numero,
+    titulo,
+    descripcion,
+    icono: Icono,
+    completado,
+    children,
+}: {
+    numero: number;
+    titulo: string;
+    descripcion: string;
+    icono: LucideIcon;
+    completado: boolean;
+    children: React.ReactNode;
+}) {
+    return (
+        <div
+            className={cn(
+                "flex flex-col gap-3 rounded-lg border p-4",
+                completado && "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30",
+            )}
+        >
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                {completado ? (
+                    <CheckCircle2Icon className="size-4 text-emerald-600" />
+                ) : (
+                    <CircleIcon className="size-4" />
+                )}
+                Paso {numero}
+            </div>
+            <div className="flex items-start gap-2">
+                <Icono className="mt-0.5 size-4 shrink-0" />
+                <div>
+                    <p className="text-sm font-semibold">{titulo}</p>
+                    <p className="text-xs text-muted-foreground">{descripcion}</p>
+                </div>
+            </div>
+            <div className="mt-auto">{children}</div>
+        </div>
+    );
+}
 
-    async function cargar() {
-        setCargando(true);
+export function CalculoPanel({ periodo, resumen, onPeriodoChange, onProcesado }: Props) {
+    const { esAdmin } = useAuth();
+    const [confirmar, setConfirmar] = useState<Accion | null>(null);
+    const [procesando, setProcesando] = useState(false);
+    const [recargarPeriodos, setRecargarPeriodos] = useState(0);
+
+    const cerrado = periodo?.estado === "CERRADO";
+    const deshabilitado = !periodo || cerrado || procesando;
+
+    async function ejecutar() {
+        if (!periodo || !confirmar) return;
+        setProcesando(true);
         try {
-            const data = await periodosApi.getAbiertos();
-            setPeriodos(data);
-            if (data.length > 0 && !periodoId) {
-                setPeriodoId(data[0].periodoId);
-            }
-        } catch {
-            setError("No se pudieron cargar los períodos.");
-        } finally {
-            setCargando(false);
-        }
-    }
-
-    useEffect(() => {
-        cargar();
-    }, []);
-
-    const periodoSeleccionado = periodos.find((p) => p.periodoId === periodoId);
-
-    async function ejecutar(accion: "anticipo" | "nomina" | "cerrar") {
-        if (!periodoId) return;
-        setError("");
-        setAccion(accion);
-        setConfirmar(null);
-        try {
-            if (accion === "anticipo") {
-                await nominaApi.calcularAnticipo({ periodoId });
-            } else if (accion === "nomina") {
-                await nominaApi.calcularNomina({ periodoId });
-            } else {
-                await nominaApi.cerrarNomina({ periodoId });
-            }
-            onCalculo(periodoId);
-            await cargar();
-        } catch (err: unknown) {
-            const axiosError = err as {
-                response?: { data?: { message?: string | string[] } };
+            const operaciones: Record<Accion, (id: number) => ReturnType<typeof nominaApi.calcularNomina>> = {
+                anticipo: nominaApi.calcularAnticipo,
+                finmes: nominaApi.calcularNomina,
+                cerrar: nominaApi.cerrarNomina,
             };
-            const mensaje = axiosError.response?.data?.message;
-            setError(
-                Array.isArray(mensaje)
-                    ? mensaje.join(", ")
-                    : (mensaje ?? "No se pudo ejecutar la acción."),
-            );
+            const resultado = await operaciones[confirmar](periodo.periodoId);
+            toast.success(resultado.mensaje, {
+                description: `${resultado.totalNominas} empleado(s) procesados`,
+            });
+            setConfirmar(null);
+            if (confirmar === "cerrar") setRecargarPeriodos((n) => n + 1);
+            onProcesado();
+        } catch (err) {
+            toast.error(mensajeError(err, "No se pudo completar el proceso."));
         } finally {
-            setAccion(null);
+            setProcesando(false);
         }
     }
 
-    function nombrePeriodo(p: Periodo) {
-        return `${MESES[p.mes - 1]} ${p.anio} — ${
-            p.tipoPeriodo === "QUINCENAL"
-                ? `${p.quincena}ª quincena`
-                : "Mensual"
-        } (${formatFecha(p.fechaInicio)} → ${formatFecha(p.fechaFin)})`;
-    }
+    const accion = confirmar ? CONFIRMACIONES[confirmar] : null;
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Calculator className="h-5 w-5" />
-                    Cálculo de Nómina
-                </CardTitle>
-                <CardDescription>
-                    Seleccione un período y ejecute el cálculo correspondiente.
-                </CardDescription>
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-1.5">
+                    <CardTitle className="flex items-center gap-2">
+                        <Calculator className="size-5" />
+                        Proceso de nómina
+                    </CardTitle>
+                    <CardDescription>
+                        {periodo ? (
+                            <span className="flex flex-wrap items-center gap-2">
+                                {rangoPeriodo(periodo)}
+                                <EstadoBadge estado={periodo.estado} />
+                            </span>
+                        ) : (
+                            "Seleccione el período a procesar."
+                        )}
+                    </CardDescription>
+                </div>
+                <PeriodoSelect
+                    value={periodo?.periodoId ?? null}
+                    onChange={onPeriodoChange}
+                    recargar={recargarPeriodos}
+                    seleccionarPrimero
+                />
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label
-                        htmlFor="periodoId"
-                        className="flex items-center gap-2"
+            <CardContent>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <Paso
+                        numero={1}
+                        titulo="Novedades"
+                        descripcion="Horas extras, comisiones, bonificaciones y descuentos."
+                        icono={ClipboardListIcon}
+                        completado={false}
                     >
-                        <CalendarDays className="h-4 w-4" />
-                        Período
-                    </Label>
-                    <Select
-                        value={periodoId ? String(periodoId) : undefined}
-                        onValueChange={(v) => v && setPeriodoId(Number(v))}
-                        disabled={cargando || periodos.length === 0}
-                    >
-                        <SelectTrigger id="periodoId">
-                            <SelectValue placeholder="Seleccione un período" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {periodos.map((p) => (
-                                <SelectItem
-                                    key={p.periodoId}
-                                    value={String(p.periodoId)}
-                                >
-                                    {nombrePeriodo(p)}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    {periodos.length === 0 && !cargando && (
-                        <p className="text-sm text-muted-foreground">
-                            No hay períodos abiertos. Cree uno en la sección de
-                            Períodos.
-                        </p>
-                    )}
-                </div>
-
-                {error && (
-                    <Alert variant="destructive">
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                <div className="flex flex-wrap gap-2">
-                    <Button
-                        onClick={() => setConfirmar("anticipo")}
-                        disabled={!periodoId || accion !== null}
-                        variant="outline"
-                    >
-                        {accion === "anticipo" ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Calculator className="mr-2 h-4 w-4" />
-                        )}
-                        Calcular anticipo
-                    </Button>
-
-                    <Button
-                        onClick={() => setConfirmar("nomina")}
-                        disabled={!periodoId || accion !== null}
-                    >
-                        {accion === "nomina" ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Calculator className="mr-2 h-4 w-4" />
-                        )}
-                        Calcular nómina fin de mes
-                    </Button>
-
-                    <Button
-                        onClick={() => setConfirmar("cerrar")}
-                        disabled={!periodoId || accion !== null}
-                        variant="destructive"
-                    >
-                        {accion === "cerrar" ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Lock className="mr-2 h-4 w-4" />
-                        )}
-                        Cerrar nómina
-                    </Button>
-                </div>
-
-                {periodoSeleccionado && (
-                    <p className="text-xs text-muted-foreground">
-                        Período seleccionado:{" "}
-                        <strong>#{periodoSeleccionado.numeroPeriodo}</strong> —
-                        Estado: {periodoSeleccionado.estado}
-                    </p>
-                )}
-            </CardContent>
-
-            <Dialog
-                open={!!confirmar}
-                onOpenChange={(open) => !open && setConfirmar(null)}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                            {confirmar === "anticipo" && "Calcular anticipo"}
-                            {confirmar === "nomina" &&
-                                "Calcular nómina fin de mes"}
-                            {confirmar === "cerrar" && "Cerrar nómina"}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {confirmar === "anticipo" &&
-                                "Se calculará el 50% del salario base para todos los empleados activos en el período seleccionado."}
-                            {confirmar === "nomina" &&
-                                "Se calculará la nómina de fin de mes con percepciones, deducciones y provisiones."}
-                            {confirmar === "cerrar" &&
-                                "Se cerrará el período. No se podrá modificar ni recalcular la nómina después de esto."}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setConfirmar(null)}
+                            className="w-full"
+                            render={<Link to="/novedades" />}
+                            nativeButton={false}
                         >
-                            Cancelar
+                            Revisar novedades
                         </Button>
+                    </Paso>
+                    <Paso
+                        numero={2}
+                        titulo="Anticipo día 15"
+                        descripcion={
+                            resumen.anticipos
+                                ? `${resumen.anticipos} empleado(s) con anticipo`
+                                : "Pago parcial sobre el salario base."
+                        }
+                        icono={HandCoinsIcon}
+                        completado={resumen.anticipos > 0}
+                    >
                         <Button
-                            variant={
-                                confirmar === "cerrar"
-                                    ? "destructive"
-                                    : "default"
-                            }
-                            onClick={() => confirmar && ejecutar(confirmar)}
+                            variant="outline"
+                            className="w-full"
+                            disabled={deshabilitado || resumen.finMes > 0}
+                            onClick={() => setConfirmar("anticipo")}
                         >
-                            Confirmar
+                            {resumen.anticipos ? "Recalcular anticipo" : "Calcular anticipo"}
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </Paso>
+                    <Paso
+                        numero={3}
+                        titulo="Fin de mes"
+                        descripcion={
+                            resumen.finMes
+                                ? `${resumen.finMes} empleado(s) calculados`
+                                : "Ingresos, descuentos de ley y provisiones."
+                        }
+                        icono={Calculator}
+                        completado={resumen.finMes > 0}
+                    >
+                        <Button
+                            className="w-full"
+                            disabled={deshabilitado}
+                            onClick={() => setConfirmar("finmes")}
+                        >
+                            {resumen.finMes ? "Recalcular nómina" : "Calcular nómina"}
+                        </Button>
+                    </Paso>
+                    <Paso
+                        numero={4}
+                        titulo="Cierre"
+                        descripcion={
+                            esAdmin
+                                ? "Bloquea el período para auditoría."
+                                : "Solo un administrador puede cerrar el período."
+                        }
+                        icono={LockIcon}
+                        completado={cerrado}
+                    >
+                        <Button
+                            variant="destructive"
+                            className="w-full"
+                            disabled={deshabilitado || !esAdmin || resumen.finMes === 0}
+                            onClick={() => setConfirmar("cerrar")}
+                        >
+                            Cerrar período
+                        </Button>
+                    </Paso>
+                </div>
+            </CardContent>
+
+            <ConfirmDialog
+                open={!!accion}
+                titulo={accion?.titulo ?? ""}
+                descripcion={accion?.descripcion}
+                textoConfirmar={accion?.boton}
+                destructivo={confirmar === "cerrar"}
+                procesando={procesando}
+                onConfirmar={ejecutar}
+                onCancelar={() => setConfirmar(null)}
+            />
         </Card>
     );
 }

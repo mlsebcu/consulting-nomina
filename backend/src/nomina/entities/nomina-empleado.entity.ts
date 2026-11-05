@@ -1,93 +1,65 @@
 import {
-    Column,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    OneToMany,
-    PrimaryGeneratedColumn,
-} from "typeorm";
-import { BaseEntity } from "../../common/entities/base.entity";
-import { Empleado } from "../../empleados/entities/empleado.entity";
-import { Periodo } from "../../periodos/entities/periodo.entity";
-import { NominaDetalle } from "./nomina-detalle.entity";
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity';
+import { EstadoNomina, TipoNomina } from '../../common/enums/nomina.enums';
+import { Empleado } from '../../empleados/entities/empleado.entity';
+import { Periodo } from '../../periodos/entities/periodo.entity';
+import { NominaDetalle } from './nomina-detalle.entity';
 
-@Entity("NominaEmpleado")
+const MONTO = { type: 'numeric', precision: 12, scale: 2, default: 0 } as const;
+
+@Entity('nomina_empleado')
 export class NominaEmpleado extends BaseEntity {
-    @PrimaryGeneratedColumn({ name: "NominaEmpleadoId" })
-    nominaEmpleadoId: number;
+  @PrimaryGeneratedColumn()
+  nominaEmpleadoId: number;
 
-    @Column({ name: "EmpleadoId", type: "int" })
-    empleadoId: number;
+  @Column({ type: 'int' })
+  empleadoId: number;
 
-    @ManyToOne(() => Empleado)
-    @JoinColumn({ name: "EmpleadoId" })
-    empleado: Empleado;
+  @ManyToOne(() => Empleado)
+  @JoinColumn({ name: 'empleado_id' })
+  empleado: Empleado;
 
-    @Column({ name: "PeriodoId", type: "int" })
-    periodoId: number;
+  @Column({ type: 'int' })
+  periodoId: number;
 
-    @ManyToOne(() => Periodo)
-    @JoinColumn({ name: "PeriodoId" })
-    periodo: Periodo;
+  @ManyToOne(() => Periodo)
+  @JoinColumn({ name: 'periodo_id' })
+  periodo: Periodo;
 
-    @Column({ name: "TipoNomina", type: "varchar", length: 10 })
-    tipoNomina: "ANTICIPO" | "FINMES";
+  @Column({ type: 'varchar', length: 10 })
+  tipoNomina: TipoNomina;
 
-    @Column({
-        name: "TotalPercepciones",
-        type: "decimal",
-        precision: 12,
-        scale: 2,
-        default: 0,
-    })
-    totalPercepciones: number;
+  @Column({ type: 'int', default: 0 })
+  diasLaborados: number;
 
-    @Column({
-        name: "TotalDeducciones",
-        type: "decimal",
-        precision: 12,
-        scale: 2,
-        default: 0,
-    })
-    totalDeducciones: number;
+  @Column(MONTO)
+  totalPercepciones: number;
 
-    @Column({
-        name: "TotalProvisiones",
-        type: "decimal",
-        precision: 12,
-        scale: 2,
-        default: 0,
-    })
-    totalProvisiones: number;
+  @Column(MONTO)
+  totalDeducciones: number;
 
-    @Column({
-        name: "Anticipo",
-        type: "decimal",
-        precision: 12,
-        scale: 2,
-        default: 0,
-    })
-    anticipo: number;
+  @Column(MONTO)
+  totalProvisiones: number;
 
-    @Column({
-        name: "Liquido",
-        type: "decimal",
-        precision: 12,
-        scale: 2,
-        default: 0,
-    })
-    liquido: number;
+  @Column(MONTO)
+  anticipo: number;
 
-    @Column({ name: "Estado", type: "varchar", length: 10, default: "ABIERTA" })
-    estado: "ABIERTA" | "CERRADA";
+  @Column(MONTO)
+  liquido: number;
 
-    @Column({
-        name: "FechaCalculo",
-        type: "datetime",
-        default: () => "GETDATE()",
-    })
-    fechaCalculo: Date;
+  @Column({ type: 'varchar', length: 10, default: EstadoNomina.ABIERTA })
+  estado: EstadoNomina;
 
-    @OneToMany(() => NominaDetalle, (detalle) => detalle.nominaEmpleado)
-    detalles: NominaDetalle[];
+  @Column({ type: 'timestamptz' })
+  fechaCalculo: Date;
+
+  @OneToMany(() => NominaDetalle, (detalle) => detalle.nominaEmpleado)
+  detalles: NominaDetalle[];
 }

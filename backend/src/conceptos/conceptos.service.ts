@@ -1,19 +1,20 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { CreateConceptoDto } from "./dto/create-concepto.dto";
-import { UpdateConceptoDto } from "./dto/update-concepto.dto";
-import { UpdateReglaFiscalDto } from "./dto/update-regla-fiscal.dto";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { NaturalezaConcepto } from "./entities/naturaleza-concepto.entity";
-import { Concepto } from "./entities/concepto.entity";
-import { ConceptoReglaFiscal } from "./entities/concepto-regla-fiscal.entity";
-import { CreateNaturalezaDto } from "./dto/create-naturaleza.dto";
-import { UpdateNaturalezaDto } from "./dto/update-naturaleza.dto";
-import { CreateReglaFiscalDto } from "./dto/create-regla-fiscal.dto";
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateConceptoDto } from './dto/create-concepto.dto';
+import { CreateNaturalezaDto } from './dto/create-naturaleza.dto';
+import { CreateReglaFiscalDto } from './dto/create-regla-fiscal.dto';
+import { UpdateConceptoDto } from './dto/update-concepto.dto';
+import { UpdateNaturalezaDto } from './dto/update-naturaleza.dto';
+import { UpdateReglaFiscalDto } from './dto/update-regla-fiscal.dto';
+import { ConceptoReglaFiscal } from './entities/concepto-regla-fiscal.entity';
+import { Concepto } from './entities/concepto.entity';
+import { NaturalezaConcepto } from './entities/naturaleza-concepto.entity';
 
 @Injectable()
 export class ConceptosService {
@@ -26,12 +27,8 @@ export class ConceptosService {
     private readonly reglaFiscalRepo: Repository<ConceptoReglaFiscal>,
   ) {}
 
-  // ============================================================
-  // NATURALEZAS
-  // ============================================================
-
   async createNaturaleza(dto: CreateNaturalezaDto, usuarioId: number) {
-    const existe = await this.naturalezaRepo.findOne({
+    const existe = await this.naturalezaRepo.exists({
       where: { codigo: dto.codigo, activo: true },
     });
     if (existe) {
@@ -40,17 +37,15 @@ export class ConceptosService {
       );
     }
 
-    const naturaleza = this.naturalezaRepo.create({
-      ...dto,
-      creadoPor: usuarioId,
-    });
-    return this.naturalezaRepo.save(naturaleza);
+    return this.naturalezaRepo.save(
+      this.naturalezaRepo.create({ ...dto, creadoPor: usuarioId }),
+    );
   }
 
   findAllNaturalezas() {
     return this.naturalezaRepo.find({
       where: { activo: true },
-      order: { orden: "ASC" },
+      order: { orden: 'ASC' },
     });
   }
 
@@ -70,6 +65,14 @@ export class ConceptosService {
     usuarioId: number,
   ) {
     const naturaleza = await this.findOneNaturaleza(id);
+    const enUso = await this.conceptosQueUsanNaturaleza(id);
+
+    if (enUso > 0 && dto.codigo && dto.codigo !== naturaleza.codigo) {
+      throw new ConflictException(
+        'No se puede cambiar el código de una naturaleza asignada a conceptos',
+      );
+    }
+
     Object.assign(naturaleza, dto, {
       modificadoPor: usuarioId,
       fechaModificacion: new Date(),
@@ -79,50 +82,40 @@ export class ConceptosService {
 
   async removeNaturaleza(id: number, usuarioId: number) {
     const naturaleza = await this.findOneNaturaleza(id);
+    const enUso = await this.conceptosQueUsanNaturaleza(id);
 
-    const enUso = await this.conceptoRepo.count({
-      where: { naturalezaId: id, activo: true },
-    });
     if (enUso > 0) {
       throw new ConflictException(
         `No se puede eliminar la naturaleza porque está en uso por ${enUso} concepto(s)`,
       );
     }
 
-    naturaleza.activo = false;
-    naturaleza.eliminadoPor = usuarioId;
-    naturaleza.fechaEliminacion = new Date();
+    Object.assign(naturaleza, {
+      activo: false,
+      eliminadoPor: usuarioId,
+      fechaEliminacion: new Date(),
+    });
     return this.naturalezaRepo.save(naturaleza);
   }
 
-  // ============================================================
-  // CONCEPTOS
-  // ============================================================
-
   async createConcepto(dto: CreateConceptoDto, usuarioId: number) {
     await this.findOneNaturaleza(dto.naturalezaId);
+    await this.validarCodigoConceptoUnico(dto.codigo);
 
-    const existe = await this.conceptoRepo.findOne({
-      where: { codigo: dto.codigo, activo: true },
-    });
-    if (existe) {
-      throw new ConflictException(
-        `Ya existe un concepto con código ${dto.codigo}`,
-      );
-    }
-
-    const concepto = this.conceptoRepo.create({
-      ...dto,
-      creadoPor: usuarioId,
-    });
-    return this.conceptoRepo.save(concepto);
+    return this.conceptoRepo.save(
+      this.conceptoRepo.create({
+        ...dto,
+        esSistema: false,
+        creadoPor: usuarioId,
+      }),
+    );
   }
 
   findAllConceptos() {
     return this.conceptoRepo.find({
       where: { activo: true },
       relations: { naturaleza: true },
-      order: { orden: "ASC" },
+      order: { naturalezaId: 'ASC', orden: 'ASC' },
     });
   }
 
@@ -140,19 +133,28 @@ export class ConceptosService {
   async updateConcepto(id: number, dto: UpdateConceptoDto, usuarioId: number) {
     const concepto = await this.findOneConcepto(id);
 
+    if (concepto.esSistema) {
+      const cambiaCodigo =
+        dto.codigo !== undefined && dto.codigo !== concepto.codigo;
+      const cambiaNaturaleza =
+        dto.naturalezaId !== undefined &&
+        dto.naturalezaId !== concepto.naturalezaId;
+      const cambiaCalculo =
+        dto.tipoCalculo !== undefined &&
+        dto.tipoCalculo !== concepto.tipoCalculo;
+
+      if (cambiaCodigo || cambiaNaturaleza || cambiaCalculo) {
+        throw new BadRequestException(
+          'En conceptos de sistema solo se puede modificar nombre, cuenta contable y orden',
+        );
+      }
+    }
+
     if (dto.naturalezaId) {
       await this.findOneNaturaleza(dto.naturalezaId);
     }
-
     if (dto.codigo && dto.codigo !== concepto.codigo) {
-      const existe = await this.conceptoRepo.findOne({
-        where: { codigo: dto.codigo, activo: true },
-      });
-      if (existe) {
-        throw new ConflictException(
-          `Ya existe un concepto con código ${dto.codigo}`,
-        );
-      }
+      await this.validarCodigoConceptoUnico(dto.codigo);
     }
 
     Object.assign(concepto, dto, {
@@ -164,15 +166,20 @@ export class ConceptosService {
 
   async removeConcepto(id: number, usuarioId: number) {
     const concepto = await this.findOneConcepto(id);
-    concepto.activo = false;
-    concepto.eliminadoPor = usuarioId;
-    concepto.fechaEliminacion = new Date();
+
+    if (concepto.esSistema) {
+      throw new BadRequestException(
+        'Los conceptos de sistema son requeridos por el cálculo de nómina y no pueden eliminarse',
+      );
+    }
+
+    Object.assign(concepto, {
+      activo: false,
+      eliminadoPor: usuarioId,
+      fechaEliminacion: new Date(),
+    });
     return this.conceptoRepo.save(concepto);
   }
-
-  // ============================================================
-  // REGLAS FISCALES
-  // ============================================================
 
   async createReglaFiscal(
     conceptoId: number,
@@ -181,7 +188,7 @@ export class ConceptosService {
   ) {
     await this.findOneConcepto(conceptoId);
 
-    const existe = await this.reglaFiscalRepo.findOne({
+    const existe = await this.reglaFiscalRepo.exists({
       where: {
         conceptoId,
         pais: dto.pais,
@@ -192,22 +199,19 @@ export class ConceptosService {
     });
     if (existe) {
       throw new ConflictException(
-        `Ya existe una regla fiscal para el concepto ${conceptoId} en ${dto.pais}/${dto.anio}/${dto.tipoImpuesto}`,
+        `Ya existe una regla ${dto.tipoImpuesto} para ${dto.pais} en ${dto.anio}`,
       );
     }
 
-    const regla = this.reglaFiscalRepo.create({
-      ...dto,
-      conceptoId,
-      creadoPor: usuarioId,
-    });
-    return this.reglaFiscalRepo.save(regla);
+    return this.reglaFiscalRepo.save(
+      this.reglaFiscalRepo.create({ ...dto, conceptoId, creadoPor: usuarioId }),
+    );
   }
 
   findReglasFiscalesByConcepto(conceptoId: number) {
     return this.reglaFiscalRepo.find({
       where: { conceptoId, activo: true },
-      order: { anio: "DESC", tipoImpuesto: "ASC" },
+      order: { anio: 'DESC', tipoImpuesto: 'ASC' },
     });
   }
 
@@ -217,15 +221,7 @@ export class ConceptosService {
     dto: UpdateReglaFiscalDto,
     usuarioId: number,
   ) {
-    const regla = await this.reglaFiscalRepo.findOne({
-      where: { conceptoReglaFiscalId: reglaId, conceptoId, activo: true },
-    });
-    if (!regla) {
-      throw new NotFoundException(
-        `Regla fiscal con id ${reglaId} no encontrada`,
-      );
-    }
-
+    const regla = await this.findOneReglaFiscal(conceptoId, reglaId);
     Object.assign(regla, dto, {
       modificadoPor: usuarioId,
       fechaModificacion: new Date(),
@@ -238,6 +234,16 @@ export class ConceptosService {
     reglaId: number,
     usuarioId: number,
   ) {
+    const regla = await this.findOneReglaFiscal(conceptoId, reglaId);
+    Object.assign(regla, {
+      activo: false,
+      eliminadoPor: usuarioId,
+      fechaEliminacion: new Date(),
+    });
+    return this.reglaFiscalRepo.save(regla);
+  }
+
+  private async findOneReglaFiscal(conceptoId: number, reglaId: number) {
     const regla = await this.reglaFiscalRepo.findOne({
       where: { conceptoReglaFiscalId: reglaId, conceptoId, activo: true },
     });
@@ -246,10 +252,19 @@ export class ConceptosService {
         `Regla fiscal con id ${reglaId} no encontrada`,
       );
     }
+    return regla;
+  }
 
-    regla.activo = false;
-    regla.eliminadoPor = usuarioId;
-    regla.fechaEliminacion = new Date();
-    return this.reglaFiscalRepo.save(regla);
+  private conceptosQueUsanNaturaleza(naturalezaId: number) {
+    return this.conceptoRepo.count({ where: { naturalezaId, activo: true } });
+  }
+
+  private async validarCodigoConceptoUnico(codigo: string) {
+    const existe = await this.conceptoRepo.exists({
+      where: { codigo, activo: true },
+    });
+    if (existe) {
+      throw new ConflictException(`Ya existe un concepto con código ${codigo}`);
+    }
   }
 }

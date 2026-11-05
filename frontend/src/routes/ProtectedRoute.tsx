@@ -1,50 +1,48 @@
+import { Suspense } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { AppSidebar } from "../components/app-sidebar";
+import { Loader2 } from "lucide-react";
+import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-
-const titulos: Record<string, string> = {
-  "/empleados": "Empleados",
-  "/departamentos": "Departamentos",
-  "/conceptos": "Conceptos",
-  "/periodos": "Períodos",
-  "/nomina": "Nómina",
-  "/reportes": "Reportes",
-};
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/context/AuthContext";
+import { buscarItem } from "./navegacion";
 
 export function ProtectedRoute() {
-  const { usuario } = useAuth();
-  const location = useLocation();
+    const { usuario } = useAuth();
+    const { pathname } = useLocation();
 
-  if (!usuario) {
-    return <Navigate to="/login" replace />;
-  }
+    if (!usuario) {
+        return <Navigate to="/login" replace state={{ desde: pathname }} />;
+    }
 
-  const titulo = titulos[location.pathname] ?? "";
+    const item = buscarItem(pathname);
 
-  return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
-            <h1 className="text-sm font-medium">{titulo}</h1>
-          </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <Outlet />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
-  );
+    return (
+        <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset className="min-w-0">
+                <header className="flex h-16 shrink-0 items-center gap-2 px-4 print:hidden">
+                    <SidebarTrigger className="-ml-1" />
+                    <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+                    <div className="leading-tight">
+                        <h1 className="text-sm font-semibold">{item?.titulo}</h1>
+                        <p className="hidden text-xs text-muted-foreground sm:block">
+                            {item?.descripcion}
+                        </p>
+                    </div>
+                </header>
+                <main className="flex min-w-0 flex-1 flex-col gap-4 p-4 pt-0">
+                    <Suspense
+                        fallback={
+                            <div className="flex flex-1 items-center justify-center py-16">
+                                <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                            </div>
+                        }
+                    >
+                        <Outlet />
+                    </Suspense>
+                </main>
+            </SidebarInset>
+        </SidebarProvider>
+    );
 }

@@ -1,45 +1,50 @@
 import {
-    Column,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-} from "typeorm";
-import { BaseEntity } from "../../common/entities/base.entity";
-import { Concepto } from "../../conceptos/entities/concepto.entity";
-import { NominaEmpleado } from "./nomina-empleado.entity";
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity';
+import { Concepto } from '../../conceptos/entities/concepto.entity';
+import { NominaEmpleado } from './nomina-empleado.entity';
 
-@Entity("NominaDetalle")
+@Entity('nomina_detalle')
 export class NominaDetalle extends BaseEntity {
-    @PrimaryGeneratedColumn({ name: "NominaDetalleId" })
-    nominaDetalleId: number;
+  @PrimaryGeneratedColumn()
+  nominaDetalleId: number;
 
-    @Column({ name: "NominaEmpleadoId", type: "int" })
-    nominaEmpleadoId: number;
+  @Column({ type: 'int' })
+  nominaEmpleadoId: number;
 
-    @ManyToOne(() => NominaEmpleado, (nomina) => nomina.detalles)
-    @JoinColumn({ name: "NominaEmpleadoId" })
-    nominaEmpleado: NominaEmpleado;
+  @ManyToOne(() => NominaEmpleado, (nomina) => nomina.detalles, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'nomina_empleado_id' })
+  nominaEmpleado: NominaEmpleado;
 
-    @Column({ name: "ConceptoId", type: "int" })
-    conceptoId: number;
+  @Column({ type: 'int' })
+  conceptoId: number;
 
-    @ManyToOne(() => Concepto)
-    @JoinColumn({ name: "ConceptoId" })
-    concepto: Concepto;
+  @ManyToOne(() => Concepto)
+  @JoinColumn({ name: 'concepto_id' })
+  concepto: Concepto;
 
-    @Column({ name: "ConceptoCodigo", type: "varchar", length: 20 })
-    conceptoCodigo: string;
+  @Column({ type: 'varchar', length: 20 })
+  conceptoCodigo: string;
 
-    @Column({ name: "ConceptoNombre", type: "varchar", length: 100 })
-    conceptoNombre: string;
+  @Column({ type: 'varchar', length: 100 })
+  conceptoNombre: string;
 
-    @Column({ name: "NaturalezaCodigo", type: "varchar", length: 15 })
-    naturalezaCodigo: string;
+  @Column({ type: 'varchar', length: 15 })
+  naturalezaCodigo: string;
 
-    @Column({ name: "Monto", type: "decimal", precision: 12, scale: 2 })
-    monto: number;
+  @Column({ type: 'numeric', precision: 8, scale: 2, nullable: true })
+  cantidad: number | null;
 
-    @Column({ name: "Orden", type: "int", default: 0 })
-    orden: number;
+  @Column({ type: 'numeric', precision: 12, scale: 2 })
+  monto: number;
+
+  @Column({ type: 'int', default: 0 })
+  orden: number;
 }

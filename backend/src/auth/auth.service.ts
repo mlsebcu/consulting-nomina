@@ -1,9 +1,11 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+
+const CREDENCIALES_INVALIDAS = 'Usuario o contraseña incorrectos';
 
 @Injectable()
 export class AuthService {
@@ -13,25 +15,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateUser(nombreUsuario: string, password: string): Promise<Usuario> {
-    const usuario = await this.usuarioRepo.findOne({
-      where: { nombreUsuario, activo: true },
-    });
-
-    if (!usuario) {
-      throw new UnauthorizedException('Usuario o contraseña incorrectos');
-    }
-
-    const passwordValida = await bcrypt.compare(password, usuario.passwordHash);
-    if (!passwordValida) {
-      throw new UnauthorizedException('Usuario o contraseña incorrectos');
-    }
-
-    return usuario;
-  }
-
   async login(nombreUsuario: string, password: string) {
-    const usuario = await this.validateUser(nombreUsuario, password);
+    const usuario = await this.validarCredenciales(nombreUsuario, password);
 
     const payload = {
       sub: usuario.usuarioId,
@@ -40,12 +25,33 @@ export class AuthService {
     };
 
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken: await this.jwtService.signAsync(payload),
       usuario: {
         nombreUsuario: usuario.nombreUsuario,
         rol: usuario.rol,
       },
     };
   }
-}
 
+  private async validarCredenciales(nombreUsuario: string, password: string) {
+    const usuario = await this.usuarioRepo.findOne({
+      select: {
+        usuarioId: true,
+        nombreUsuario: true,
+        rol: true,
+        passwordHash: true,
+      },
+      where: { nombreUsuario, activo: true },
+    });
+
+    const passwordValida =
+      usuario !== null &&
+      (await bcrypt.compare(password, usuario.passwordHash));
+
+    if (!usuario || !passwordValida) {
+      throw new UnauthorizedException(CREDENCIALES_INVALIDAS);
+    }
+
+    return usuario;
+  }
+}

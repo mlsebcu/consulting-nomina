@@ -1,23 +1,20 @@
-import type { NominaEmpleado } from "../Nomina.types";
+import { useState } from "react";
+import { EyeIcon, Loader2 } from "lucide-react";
+import { EstadoBadge } from "@/components/EstadoBadge";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
     TableBody,
     TableCell,
+    TableFooter,
     TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Eye } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoneda } from "@/utils/formatters";
+import type { NominaEmpleado, TipoNomina } from "../Nomina.types";
 
 interface Props {
     nominas: NominaEmpleado[];
@@ -25,122 +22,119 @@ interface Props {
     onVerDetalle: (nomina: NominaEmpleado) => void;
 }
 
-export function NominaLista({ nominas, cargando, onVerDetalle }: Props) {
-    function colorTipo(tipo: NominaEmpleado["tipoNomina"]) {
-        return tipo === "ANTICIPO"
-            ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-            : "bg-purple-100 text-purple-800 hover:bg-purple-100";
-    }
+type Columna = {
+    titulo: string;
+    valor: (n: NominaEmpleado) => number;
+    destacada?: boolean;
+};
 
-    function colorEstado(estado: NominaEmpleado["estado"]) {
-        return estado === "CERRADA"
-            ? "bg-gray-100 text-gray-800 hover:bg-gray-100"
-            : "bg-green-100 text-green-800 hover:bg-green-100";
-    }
+const COLUMNAS: Record<TipoNomina, Columna[]> = {
+    FINMES: [
+        { titulo: "Ingresos", valor: (n) => n.totalPercepciones },
+        { titulo: "Descuentos", valor: (n) => n.totalDeducciones },
+        { titulo: "Anticipo", valor: (n) => n.anticipo },
+        { titulo: "Líquido", valor: (n) => n.liquido, destacada: true },
+        { titulo: "Provisiones", valor: (n) => n.totalProvisiones },
+    ],
+    ANTICIPO: [{ titulo: "Anticipo pagado", valor: (n) => n.liquido, destacada: true }],
+};
+
+export function NominaLista({ nominas, cargando, onVerDetalle }: Props) {
+    const [tipo, setTipo] = useState<TipoNomina>("FINMES");
+    const filas = nominas.filter((n) => n.tipoNomina === tipo);
+    const columnas = COLUMNAS[tipo];
+    const totalColumnas = columnas.length + 2;
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Nóminas del período</CardTitle>
-                <CardDescription>
-                    {nominas.length} nómina(s) calculada(s)
-                </CardDescription>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <CardTitle>Resultado por empleado</CardTitle>
+                <Tabs value={tipo} onValueChange={(v) => setTipo(v as TipoNomina)}>
+                    <TabsList>
+                        <TabsTrigger value="FINMES">Fin de mes</TabsTrigger>
+                        <TabsTrigger value="ANTICIPO">Anticipo</TabsTrigger>
+                    </TabsList>
+                </Tabs>
             </CardHeader>
             <CardContent>
                 {cargando ? (
                     <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        <Loader2 className="size-6 animate-spin text-muted-foreground" />
                     </div>
                 ) : (
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Empleado</TableHead>
-                                <TableHead>Tipo</TableHead>
-                                <TableHead className="text-right">
-                                    Percepciones
-                                </TableHead>
-                                <TableHead className="text-right">
-                                    Deducciones
-                                </TableHead>
-                                <TableHead className="text-right">
-                                    Provisiones
-                                </TableHead>
-                                <TableHead className="text-right">
-                                    Anticipo
-                                </TableHead>
-                                <TableHead className="text-right">
-                                    Líquido
-                                </TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead className="w-12" />
+                                {columnas.map((c) => (
+                                    <TableHead key={c.titulo} className="text-right">
+                                        {c.titulo}
+                                    </TableHead>
+                                ))}
+                                <TableHead className="w-28 text-right">Estado</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {nominas.length === 0 ? (
+                            {filas.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={9}
-                                        className="text-center text-muted-foreground py-8"
+                                        colSpan={totalColumnas}
+                                        className="py-8 text-center text-muted-foreground"
                                     >
-                                        No hay nóminas calculadas para este
-                                        período
+                                        {tipo === "FINMES"
+                                            ? "La nómina de fin de mes aún no se ha calculado"
+                                            : "El anticipo aún no se ha calculado"}
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                nominas.map((n) => (
+                                filas.map((n) => (
                                     <TableRow key={n.nominaEmpleadoId}>
                                         <TableCell className="font-medium">
                                             {n.empleado
                                                 ? `${n.empleado.nombres} ${n.empleado.apellidos}`
                                                 : `#${n.empleadoId}`}
+                                            <span className="block font-mono text-xs font-normal text-muted-foreground">
+                                                {n.empleado?.codigoEmpleado}
+                                            </span>
                                         </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                className={colorTipo(
-                                                    n.tipoNomina,
-                                                )}
+                                        {columnas.map((c) => (
+                                            <TableCell
+                                                key={c.titulo}
+                                                className={`text-right tabular-nums ${c.destacada ? "font-semibold" : ""}`}
                                             >
-                                                {n.tipoNomina}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono text-xs">
-                                            {formatMoneda(n.totalPercepciones)}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono text-xs">
-                                            {formatMoneda(n.totalDeducciones)}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono text-xs">
-                                            {formatMoneda(n.totalProvisiones)}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono text-xs">
-                                            {formatMoneda(n.anticipo)}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono text-xs font-semibold">
-                                            {formatMoneda(n.liquido)}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                className={colorEstado(
-                                                    n.estado,
-                                                )}
-                                            >
-                                                {n.estado}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => onVerDetalle(n)}
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
+                                                {formatMoneda(c.valor(n))}
+                                            </TableCell>
+                                        ))}
+                                        <TableCell className="text-right">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <EstadoBadge estado={n.estado} />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    aria-label="Ver recibo"
+                                                    onClick={() => onVerDetalle(n)}
+                                                >
+                                                    <EyeIcon />
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))
                             )}
                         </TableBody>
+                        {filas.length > 0 && (
+                            <TableFooter>
+                                <TableRow>
+                                    <TableCell>Total ({filas.length})</TableCell>
+                                    {columnas.map((c) => (
+                                        <TableCell key={c.titulo} className="text-right tabular-nums">
+                                            {formatMoneda(filas.reduce((s, n) => s + c.valor(n), 0))}
+                                        </TableCell>
+                                    ))}
+                                    <TableCell />
+                                </TableRow>
+                            </TableFooter>
+                        )}
                     </Table>
                 )}
             </CardContent>

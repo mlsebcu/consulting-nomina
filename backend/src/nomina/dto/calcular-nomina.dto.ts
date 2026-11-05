@@ -1,9 +1,0 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsInt, IsPositive } from "class-validator";
-
-export class CalcularNominaDto {
-    @ApiProperty({ example: 2, description: "ID del periodo de fin de mes" })
-    @IsInt()
-    @IsPositive()
-    periodoId: number;
-}

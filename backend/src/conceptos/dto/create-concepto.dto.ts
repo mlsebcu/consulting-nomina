@@ -1,59 +1,50 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-    IsBoolean,
-    IsInt,
-    IsNotEmpty,
-    IsOptional,
-    IsPositive,
-    IsString,
-    MaxLength,
-    Min,
-} from "class-validator";
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Matches,
+  MaxLength,
+  Min,
+} from 'class-validator';
+import { CUENTA_CONTABLE_PATTERN } from '../../common/constants/validacion';
+import { TipoCalculo } from '../../common/enums/nomina.enums';
 
 export class CreateConceptoDto {
-    @ApiProperty({ example: "100" })
-    @IsString()
-    @IsNotEmpty()
-    @MaxLength(20)
-    codigo: string;
+  @ApiProperty({ example: '106' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20)
+  codigo: string;
 
-    @ApiProperty({ example: "Salario Base" })
-    @IsString()
-    @IsNotEmpty()
-    @MaxLength(100)
-    nombre: string;
+  @ApiProperty({ example: 'Bono por Antigüedad' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  nombre: string;
 
-    @ApiProperty({
-        example: 1,
-        description: "ID de la naturaleza del concepto",
-    })
-    @IsInt()
-    @IsPositive()
-    naturalezaId: number;
+  @ApiProperty({ example: 1 })
+  @IsInt()
+  @IsPositive()
+  naturalezaId: number;
 
-    @ApiProperty({
-        example: "FIJO",
-        enum: ["FIJO", "PORCENTAJE", "FORMULA", "MANUAL"],
-    })
-    @IsString()
-    @IsNotEmpty()
-    @MaxLength(20)
-    tipoCalculo: string;
+  @ApiProperty({ enum: TipoCalculo })
+  @IsEnum(TipoCalculo)
+  tipoCalculo: TipoCalculo;
 
-    @ApiProperty({ example: "5101-01", required: false })
-    @IsString()
-    @IsOptional()
-    @MaxLength(20)
-    cuentaContable?: string;
+  @ApiPropertyOptional({ example: '5101-07' })
+  @IsOptional()
+  @Matches(CUENTA_CONTABLE_PATTERN, {
+    message: 'La cuenta contable debe tener el formato 0000-00',
+  })
+  cuentaContable?: string;
 
-    @ApiProperty({ example: 1, required: false })
-    @IsInt()
-    @Min(0)
-    @IsOptional()
-    orden?: number;
-
-    @ApiProperty({ example: false, required: false })
-    @IsBoolean()
-    @IsOptional()
-    esSistema?: boolean;
+  @ApiPropertyOptional({ example: 7 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  orden?: number;
 }

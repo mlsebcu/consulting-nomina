@@ -1,13 +1,15 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
-import { api } from "../api/axios";
+import { api } from "@/api/axios";
+import { sesion, type UsuarioSesion } from "@/lib/sesion";
 
-interface Usuario {
-    nombreUsuario: string;
-    rol: "ADMIN" | "RRHH";
+interface LoginResponse {
+    accessToken: string;
+    usuario: UsuarioSesion;
 }
 
 interface AuthContextType {
-    usuario: Usuario | null;
+    usuario: UsuarioSesion | null;
+    esAdmin: boolean;
     login: (nombreUsuario: string, password: string) => Promise<void>;
     logout: () => void;
 }
@@ -15,34 +17,32 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [usuario, setUsuario] = useState<Usuario | null>(() => {
-        const stored = localStorage.getItem("usuario");
-        return stored ? JSON.parse(stored) : null;
-    });
+    const [usuario, setUsuario] = useState<UsuarioSesion | null>(sesion.usuario);
 
     async function login(nombreUsuario: string, password: string) {
-        const { data } = await api.post("/auth/login", {
+        const { data } = await api.post<LoginResponse>("/auth/login", {
             nombreUsuario,
             password,
         });
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("usuario", JSON.stringify(data.usuario));
+        sesion.guardar(data.accessToken, data.usuario);
         setUsuario(data.usuario);
     }
 
     function logout() {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("usuario");
+        sesion.limpiar();
         setUsuario(null);
     }
 
     return (
-        <AuthContext.Provider value={{ usuario, login, logout }}>
+        <AuthContext.Provider
+            value={{ usuario, esAdmin: usuario?.rol === "ADMIN", login, logout }}
+        >
             {children}
         </AuthContext.Provider>
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
     const context = useContext(AuthContext);
     if (!context) {

@@ -2,43 +2,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReporteCumpleanieros } from "./components/ReporteCumpleanieros";
 import { ReporteIGSS } from "./components/ReporteIGSS";
 import { ReporteISR } from "./components/ReporteISR";
-import { ReportePoliza } from "./components/ReportePoliza";
 import { ReporteLibroSalarios } from "./components/ReporteLibroSalarios";
+import { ReportePoliza } from "./components/ReportePoliza";
+
+const REPORTES = [
+    { valor: "libro", titulo: "Libro de salarios", componente: ReporteLibroSalarios },
+    { valor: "poliza", titulo: "Póliza contable", componente: ReportePoliza },
+    { valor: "igss", titulo: "IGSS", componente: ReporteIGSS },
+    { valor: "isr", titulo: "ISR", componente: ReporteISR },
+    { valor: "cumpleanieros", titulo: "Cumpleañeros", componente: ReporteCumpleanieros },
+] as const;
 
 export default function ReportesPage() {
     return (
-        <div className="space-y-6">
-            <Tabs defaultValue="cumpleanieros" className="w-full">
-                <TabsList className="flex flex-wrap">
-                    <TabsTrigger value="cumpleanieros">
-                        Cumpleañeros
+        <Tabs defaultValue={REPORTES[0].valor} className="w-full">
+            <TabsList className="flex flex-wrap print:hidden">
+                {REPORTES.map((r) => (
+                    <TabsTrigger key={r.valor} value={r.valor}>
+                        {r.titulo}
                     </TabsTrigger>
-                    <TabsTrigger value="igss">IGSS</TabsTrigger>
-                    <TabsTrigger value="isr">ISR</TabsTrigger>
-                    <TabsTrigger value="poliza">Póliza Contable</TabsTrigger>
-                    <TabsTrigger value="libro">Libro de Salarios</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="cumpleanieros" className="mt-6">
-                    <ReporteCumpleanieros />
+                ))}
+            </TabsList>
+            {REPORTES.map(({ valor, componente: Reporte }) => (
+                <TabsContent key={valor} value={valor} className="mt-4">
+                    <Reporte />
                 </TabsContent>
-
-                <TabsContent value="igss" className="mt-6">
-                    <ReporteIGSS />
-                </TabsContent>
-
-                <TabsContent value="isr" className="mt-6">
-                    <ReporteISR />
-                </TabsContent>
-
-                <TabsContent value="poliza" className="mt-6">
-                    <ReportePoliza />
-                </TabsContent>
-
-                <TabsContent value="libro" className="mt-6">
-                    <ReporteLibroSalarios />
-                </TabsContent>
-            </Tabs>
-        </div>
+            ))}
+        </Tabs>
     );
 }

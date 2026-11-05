@@ -1,302 +1,144 @@
-import { useEffect, useState } from "react";
-import type { FilaLibroSalarios, TotalLibroSalarios } from "../Reportes.types";
-import { reportesApi } from "../Reportes.api";
-import { periodosApi } from "../../periodos/Periodos.api";
-import type { Periodo } from "../../periodos/Periodos.types";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { useState } from "react";
+import { FileSpreadsheet } from "lucide-react";
+import { PeriodoSelect } from "@/components/PeriodoSelect";
 import {
     Table,
     TableBody,
     TableCell,
+    TableFooter,
     TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Search, FileSpreadsheet } from "lucide-react";
 import { formatMoneda } from "@/utils/formatters";
+import { reportesApi } from "../Reportes.api";
+import type { FilaLibroSalarios, TotalDepartamento } from "../Reportes.types";
+import { ReporteCard, useReporte } from "./ReporteCard";
 
-const MESES = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
-];
+const COLUMNAS = 7;
+
+function FilaTotal({ total }: { total: TotalDepartamento }) {
+    return (
+        <TableRow className="bg-muted/50 font-medium">
+            <TableCell colSpan={3}>
+                Total {total.departamento} ({total.totalEmpleados})
+            </TableCell>
+            <TableCell className="text-right tabular-nums">{formatMoneda(total.totalIngresos)}</TableCell>
+            <TableCell className="text-right tabular-nums">{formatMoneda(total.totalEgresos)}</TableCell>
+            <TableCell className="text-right tabular-nums">{formatMoneda(total.totalAnticipo)}</TableCell>
+            <TableCell className="text-right tabular-nums">{formatMoneda(total.totalLiquido)}</TableCell>
+        </TableRow>
+    );
+}
 
 export function ReporteLibroSalarios() {
-    const [periodos, setPeriodos] = useState<Periodo[]>([]);
     const [periodoId, setPeriodoId] = useState<number | null>(null);
-    const [lista, setLista] = useState<FilaLibroSalarios[]>([]);
-    const [totales, setTotales] = useState<TotalLibroSalarios[]>([]);
-    const [error, setError] = useState("");
-    const [cargando, setCargando] = useState(false);
-    const [cargandoPeriodos, setCargandoPeriodos] = useState(false);
-    const [buscado, setBuscado] = useState(false);
+    const { datos, cargando, error } = useReporte(
+        periodoId ? () => reportesApi.libroSalarios(periodoId) : null,
+        periodoId,
+    );
+    const lista = datos?.lista ?? [];
+    const totales = datos?.totales ?? [];
 
-    useEffect(() => {
-        cargarPeriodos();
-    }, []);
-
-    async function cargarPeriodos() {
-        setCargandoPeriodos(true);
-        try {
-            setPeriodos(await periodosApi.getAll());
-        } catch {
-            setError("No se pudieron cargar los períodos.");
-        } finally {
-            setCargandoPeriodos(false);
-        }
+    const porDepartamento = new Map<string, FilaLibroSalarios[]>();
+    for (const fila of lista) {
+        porDepartamento.set(fila.departamento, [...(porDepartamento.get(fila.departamento) ?? []), fila]);
     }
 
-    async function generar() {
-        if (!periodoId) return;
-        setError("");
-        setCargando(true);
-        try {
-            const data = await reportesApi.libroSalarios(periodoId);
-            setLista(data.lista);
-            setTotales(data.totales);
-            setBuscado(true);
-        } catch {
-            setError("No se pudo generar el reporte.");
-            setLista([]);
-        } finally {
-            setCargando(false);
-        }
-    }
-
-    function nombrePeriodo(p: Periodo) {
-        return `#${p.numeroPeriodo} — ${MESES[p.mes - 1]} ${p.anio} — ${
-            p.tipoPeriodo === "QUINCENAL"
-                ? `${p.quincena}ª quincena`
-                : "Mensual"
-        }`;
-    }
+    const general = totales.reduce(
+        (acc, t) => ({
+            ingresos: acc.ingresos + t.totalIngresos,
+            egresos: acc.egresos + t.totalEgresos,
+            anticipo: acc.anticipo + t.totalAnticipo,
+            liquido: acc.liquido + t.totalLiquido,
+        }),
+        { ingresos: 0, egresos: 0, anticipo: 0, liquido: 0 },
+    );
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <FileSpreadsheet className="h-5 w-5" />
-                    Libro de Salarios
-                </CardTitle>
-                <CardDescription>
-                    Detalle de salarios por empleado y totales por departamento.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex flex-wrap items-end gap-2">
-                    <div className="space-y-2">
-                        <Label htmlFor="periodoId">Período</Label>
-                        <Select
-                            value={periodoId ? String(periodoId) : ""}
-                            onValueChange={(v) => v && setPeriodoId(Number(v))}
-                            disabled={cargandoPeriodos}
-                        >
-                            <SelectTrigger id="periodoId" className="w-80">
-                                <SelectValue placeholder="Seleccione un período" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {periodos.map((p) => (
-                                    <SelectItem
-                                        key={p.periodoId}
-                                        value={String(p.periodoId)}
+        <ReporteCard
+            titulo="Libro de salarios"
+            descripcion="Departamento, empleado, sueldo base, días laborados, ingresos y egresos del período."
+            icono={FileSpreadsheet}
+            cargando={cargando}
+            error={error}
+            hayDatos={lista.length > 0}
+            filtros={
+                <PeriodoSelect
+                    value={periodoId}
+                    onChange={(p) => setPeriodoId(p.periodoId)}
+                    seleccionarPrimero
+                />
+            }
+        >
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Empleado</TableHead>
+                        <TableHead className="text-right">Sueldo base</TableHead>
+                        <TableHead className="text-right">Días lab.</TableHead>
+                        <TableHead className="text-right">Ingresos</TableHead>
+                        <TableHead className="text-right">Egresos</TableHead>
+                        <TableHead className="text-right">Anticipo</TableHead>
+                        <TableHead className="text-right">Líquido</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {lista.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={COLUMNAS} className="py-8 text-center text-muted-foreground">
+                                No hay datos. Calcule la nómina de fin de mes del período.
+                            </TableCell>
+                        </TableRow>
+                    ) : (
+                        [...porDepartamento.entries()].flatMap(([departamento, filas]) => {
+                            const total = totales.find((t) => t.departamento === departamento);
+                            return [
+                                <TableRow key={`dep-${departamento}`}>
+                                    <TableCell
+                                        colSpan={COLUMNAS}
+                                        className="pt-4 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
                                     >
-                                        {nombrePeriodo(p)}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <Button onClick={generar} disabled={cargando || !periodoId}>
-                        {cargando ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Search className="mr-2 h-4 w-4" />
-                        )}
-                        Generar
-                    </Button>
-                </div>
-
-                {error && (
-                    <Alert variant="destructive">
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                {buscado && !cargando && (
-                    <>
-                        <div>
-                            <h3 className="text-sm font-semibold mb-2">
-                                Detalle por empleado
-                            </h3>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Depto.</TableHead>
-                                        <TableHead>Código</TableHead>
-                                        <TableHead>Empleado</TableHead>
-                                        <TableHead className="text-right">
-                                            Salario Base
-                                        </TableHead>
-                                        <TableHead className="text-right">
-                                            Días
-                                        </TableHead>
-                                        <TableHead className="text-right">
-                                            Ingresos
-                                        </TableHead>
-                                        <TableHead className="text-right">
-                                            Egresos
-                                        </TableHead>
-                                        <TableHead className="text-right">
-                                            Líquido
-                                        </TableHead>
+                                        {departamento}
+                                    </TableCell>
+                                </TableRow>,
+                                ...filas.map((f) => (
+                                    <TableRow key={f.codigoEmpleado}>
+                                        <TableCell className="font-medium">
+                                            {f.empleado}
+                                            <span className="block text-xs font-normal text-muted-foreground">
+                                                {f.codigoEmpleado} · {f.puesto}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-right tabular-nums">
+                                            {formatMoneda(f.salarioBase)}
+                                        </TableCell>
+                                        <TableCell className="text-right tabular-nums">{f.diasLaborados}</TableCell>
+                                        <TableCell className="text-right tabular-nums">{formatMoneda(f.ingresos)}</TableCell>
+                                        <TableCell className="text-right tabular-nums">{formatMoneda(f.egresos)}</TableCell>
+                                        <TableCell className="text-right tabular-nums">{formatMoneda(f.anticipo)}</TableCell>
+                                        <TableCell className="text-right font-semibold tabular-nums">
+                                            {formatMoneda(f.liquido)}
+                                        </TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {lista.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={8}
-                                                className="text-center text-muted-foreground py-8"
-                                            >
-                                                No hay datos para este período
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        lista.map((f, i) => (
-                                            <TableRow
-                                                key={`${f.CodigoEmpleado}-${i}`}
-                                            >
-                                                <TableCell>
-                                                    {f.Departamento}
-                                                </TableCell>
-                                                <TableCell className="font-mono text-xs">
-                                                    {f.CodigoEmpleado}
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    {f.Empleado}
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-xs">
-                                                    {formatMoneda(
-                                                        f.SalarioBase,
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    {f.DiasLaborados}
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-xs text-green-700">
-                                                    {formatMoneda(f.Ingresos)}
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-xs text-red-700">
-                                                    {formatMoneda(f.Egresos)}
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-xs font-semibold">
-                                                    {formatMoneda(f.Liquido)}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        {totales.length > 0 && (
-                            <div>
-                                <h3 className="text-sm font-semibold mb-2 mt-6">
-                                    Totales por departamento
-                                </h3>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Departamento</TableHead>
-                                            <TableHead className="text-right">
-                                                Empleados
-                                            </TableHead>
-                                            <TableHead className="text-right">
-                                                Ingresos
-                                            </TableHead>
-                                            <TableHead className="text-right">
-                                                Egresos
-                                            </TableHead>
-                                            <TableHead className="text-right">
-                                                Provisiones
-                                            </TableHead>
-                                            <TableHead className="text-right">
-                                                Anticipo
-                                            </TableHead>
-                                            <TableHead className="text-right">
-                                                Líquido
-                                            </TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {totales.map((t) => (
-                                            <TableRow key={t.Departamento}>
-                                                <TableCell className="font-medium">
-                                                    {t.Departamento}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    {t.TotalEmpleados}
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-xs">
-                                                    {formatMoneda(
-                                                        t.TotalIngresos,
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-xs">
-                                                    {formatMoneda(
-                                                        t.TotalEgresos,
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-xs">
-                                                    {formatMoneda(
-                                                        t.TotalProvisiones,
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-xs">
-                                                    {formatMoneda(
-                                                        t.TotalAnticipo,
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono text-xs font-semibold">
-                                                    {formatMoneda(
-                                                        t.TotalLiquido,
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        )}
-                    </>
+                                )),
+                                total && <FilaTotal key={`tot-${departamento}`} total={total} />,
+                            ];
+                        })
+                    )}
+                </TableBody>
+                {lista.length > 0 && (
+                    <TableFooter>
+                        <TableRow>
+                            <TableCell colSpan={3}>Total general ({lista.length} empleados)</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatMoneda(general.ingresos)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatMoneda(general.egresos)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatMoneda(general.anticipo)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatMoneda(general.liquido)}</TableCell>
+                        </TableRow>
+                    </TableFooter>
                 )}
-            </CardContent>
-        </Card>
+            </Table>
+        </ReporteCard>
     );
 }

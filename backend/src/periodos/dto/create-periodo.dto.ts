@@ -1,49 +1,54 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-    IsDateString,
-    IsInt,
-    IsNotEmpty,
-    IsOptional,
-    IsString,
-    Max,
-    Min,
-} from "class-validator";
+  IsDateString,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  Max,
+  Min,
+} from 'class-validator';
+import {
+  ANIO_MAXIMO,
+  ANIO_MINIMO,
+  MESES_DEL_ANIO,
+} from '../../common/constants/validacion';
+import { TipoPeriodo } from '../../common/enums/nomina.enums';
+
+export const QUINCENAS = [1, 2] as const;
 
 export class CreatePeriodoDto {
-    @ApiProperty({ example: 2026 })
-    @IsInt()
-    @Min(2000)
-    @Max(2100)
-    anio: number;
+  @ApiProperty({ example: 2026 })
+  @IsInt()
+  @Min(ANIO_MINIMO)
+  @Max(ANIO_MAXIMO)
+  anio: number;
 
-    @ApiProperty({ example: 9 })
-    @IsInt()
-    @Min(1)
-    @Max(12)
-    mes: number;
+  @ApiProperty({ example: 11 })
+  @IsInt()
+  @Min(1)
+  @Max(MESES_DEL_ANIO)
+  mes: number;
 
-    @ApiProperty({ example: 1, required: false })
-    @IsInt()
-    @Min(1)
-    @Max(2)
-    @IsOptional()
-    quincena?: number;
+  @ApiPropertyOptional({ example: 1, enum: QUINCENAS })
+  @IsOptional()
+  @IsIn(QUINCENAS)
+  quincena?: number;
 
-    @ApiProperty({ example: 17 })
-    @IsInt()
-    @Min(1)
-    numeroPeriodo: number;
+  @ApiProperty({ example: 11 })
+  @IsInt()
+  @Min(1)
+  numeroPeriodo: number;
 
-    @ApiProperty({ example: "QUINCENAL", enum: ["QUINCENAL", "MENSUAL"] })
-    @IsString()
-    @IsNotEmpty()
-    tipoPeriodo: string;
+  @ApiProperty({ enum: TipoPeriodo })
+  @IsEnum(TipoPeriodo)
+  tipoPeriodo: TipoPeriodo;
 
-    @ApiProperty({ example: "2026-09-01" })
-    @IsDateString()
-    fechaInicio: string;
+  @ApiProperty({ example: '2026-11-01' })
+  @IsDateString()
+  fechaInicio: string;
 
-    @ApiProperty({ example: "2026-09-15" })
-    @IsDateString()
-    fechaFin: string;
+  @ApiProperty({ example: '2026-11-30' })
+  @IsDateString()
+  fechaFin: string;
 }

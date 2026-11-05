@@ -1,32 +1,35 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
   ParseIntPipe,
-} from "@nestjs/common";
-import { EmpleadosService } from "./empleados.service";
-import { CreateEmpleadoDto } from "./dto/create-empleado.dto";
-import { UpdateEmpleadoDto } from "./dto/update-empleado.dto";
-import { Roles } from "../auth/roles.decorator";
-import { Rol } from "../common/enums/rol.enum";
-import { CurrentUser } from "../common/decorators/current-user.decorator";
-import type { UsuarioAutenticado } from "../common/interfaces/usuario-autenticado.interface";
+  Patch,
+  Post,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../auth/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Rol } from '../common/enums/rol.enum';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { CreateEmpleadoDto } from './dto/create-empleado.dto';
+import { UpdateEmpleadoDto } from './dto/update-empleado.dto';
+import { EmpleadosService } from './empleados.service';
 
-@Controller("empleados")
+@ApiTags('Empleados')
+@ApiBearerAuth()
+@Controller('empleados')
 export class EmpleadosController {
   constructor(private readonly empleadosService: EmpleadosService) {}
 
   @Post()
-  @Roles(Rol.ADMIN)
+  @Roles(Rol.ADMIN, Rol.RRHH)
   create(
-    @Body() createEmpleadoDto: CreateEmpleadoDto,
+    @Body() dto: CreateEmpleadoDto,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
-    return this.empleadosService.create(createEmpleadoDto, user.usuarioId);
+    return this.empleadosService.create(dto, user.usuarioId);
   }
 
   @Get()
@@ -35,29 +38,28 @@ export class EmpleadosController {
     return this.empleadosService.findAll();
   }
 
-  @Get(":id")
+  @Get(':id')
   @Roles(Rol.ADMIN, Rol.RRHH)
-  findOne(@Param("id", ParseIntPipe) id: number) {
-    return this.empleadosService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.empleadosService.findOne(id);
   }
 
-  @Patch(":id")
-  @Roles(Rol.ADMIN)
+  @Patch(':id')
+  @Roles(Rol.ADMIN, Rol.RRHH)
   update(
-    @Param("id", ParseIntPipe) id: number,
-    @Body() updateEmpleadoDto: UpdateEmpleadoDto,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateEmpleadoDto,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
-    return this.empleadosService.update(+id, updateEmpleadoDto, user.usuarioId);
+    return this.empleadosService.update(id, dto, user.usuarioId);
   }
 
-  @Delete(":id")
+  @Delete(':id')
   @Roles(Rol.ADMIN)
   remove(
-    @Param("id", ParseIntPipe) id: number,
-    @CurrentUser()
-    user: UsuarioAutenticado,
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: UsuarioAutenticado,
   ) {
-    return this.empleadosService.remove(+id, user.usuarioId);
+    return this.empleadosService.remove(id, user.usuarioId);
   }
 }

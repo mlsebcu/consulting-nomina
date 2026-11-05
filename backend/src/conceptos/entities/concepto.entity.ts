@@ -1,45 +1,41 @@
 import {
-    Column,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-} from "typeorm";
-import { BaseEntity } from "../../common/entities/base.entity";
-import { NaturalezaConcepto } from "./naturaleza-concepto.entity";
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity';
+import { TipoCalculo } from '../../common/enums/nomina.enums';
+import { NaturalezaConcepto } from './naturaleza-concepto.entity';
 
-@Entity("Concepto")
+@Entity('concepto')
 export class Concepto extends BaseEntity {
-    @PrimaryGeneratedColumn({ name: "ConceptoId" })
-    conceptoId: number;
+  @PrimaryGeneratedColumn()
+  conceptoId: number;
 
-    @Column({ name: "Codigo", type: "varchar", length: 20, unique: true })
-    codigo: string;
+  @Column({ type: 'varchar', length: 20 })
+  codigo: string;
 
-    @Column({ name: "Nombre", type: "varchar", length: 100 })
-    nombre: string;
+  @Column({ type: 'varchar', length: 100 })
+  nombre: string;
 
-    @Column({ name: "NaturalezaId", type: "int" })
-    naturalezaId: number;
+  @Column({ type: 'int' })
+  naturalezaId: number;
 
-    @ManyToOne(() => NaturalezaConcepto)
-    @JoinColumn({ name: "NaturalezaId" })
-    naturaleza: NaturalezaConcepto;
+  @ManyToOne(() => NaturalezaConcepto)
+  @JoinColumn({ name: 'naturaleza_id' })
+  naturaleza: NaturalezaConcepto;
 
-    @Column({ name: "TipoCalculo", type: "varchar", length: 20 })
-    tipoCalculo: string;
+  @Column({ type: 'varchar', length: 20 })
+  tipoCalculo: TipoCalculo;
 
-    @Column({
-        name: "CuentaContable",
-        type: "varchar",
-        length: 20,
-        nullable: true,
-    })
-    cuentaContable: string | null;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  cuentaContable: string | null;
 
-    @Column({ name: "Orden", type: "int", default: 0 })
-    orden: number;
+  @Column({ type: 'int', default: 0 })
+  orden: number;
 
-    @Column({ name: "EsSistema", type: "bit", default: false })
-    esSistema: boolean;
+  @Column({ type: 'boolean', default: false })
+  esSistema: boolean;
 }

@@ -1,3 +1,6 @@
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import { mensajeError } from "@/utils/errores";
 import { useEffect, useState, type FormEvent } from "react";
 import type {
     CreateNaturalezaDto,
@@ -43,6 +46,7 @@ const FORM_INICIAL: CreateNaturalezaDto = {
 };
 
 export function NaturalezasTable() {
+    const { esAdmin } = useAuth();
     const [naturalezas, setNaturalezas] = useState<NaturalezaConcepto[]>([]);
     const [form, setForm] = useState<CreateNaturalezaDto>(FORM_INICIAL);
     const [editId, setEditId] = useState<number | null>(null);
@@ -56,8 +60,8 @@ export function NaturalezasTable() {
         setCargando(true);
         try {
             setNaturalezas(await conceptosApi.getAllNaturalezas());
-        } catch {
-            setError("No se pudieron cargar las naturalezas.");
+        } catch (err) {
+            toast.error(mensajeError(err, "No se pudieron cargar las naturalezas."));
         } finally {
             setCargando(false);
         }
@@ -94,21 +98,15 @@ export function NaturalezasTable() {
         try {
             if (editId) {
                 await conceptosApi.updateNaturaleza(editId, form);
+                toast.success("Naturaleza actualizada");
             } else {
                 await conceptosApi.createNaturaleza(form);
+                toast.success("Naturaleza creada");
             }
             setOpen(false);
             await cargar();
-        } catch (err: unknown) {
-            const axiosError = err as {
-                response?: { data?: { message?: string | string[] } };
-            };
-            const mensaje = axiosError.response?.data?.message;
-            setError(
-                Array.isArray(mensaje)
-                    ? mensaje.join(", ")
-                    : (mensaje ?? "No se pudo guardar la naturaleza."),
-            );
+        } catch (err) {
+            setError(mensajeError(err, "No se pudo guardar la naturaleza."));
         } finally {
             setGuardando(false);
         }
@@ -118,18 +116,11 @@ export function NaturalezasTable() {
         if (!eliminar) return;
         try {
             await conceptosApi.removeNaturaleza(eliminar.naturalezaId);
+            toast.success("Naturaleza eliminada");
             setEliminar(null);
             await cargar();
-        } catch (err: unknown) {
-            const axiosError = err as {
-                response?: { data?: { message?: string | string[] } };
-            };
-            const mensaje = axiosError.response?.data?.message;
-            alert(
-                Array.isArray(mensaje)
-                    ? mensaje.join(", ")
-                    : (mensaje ?? "No se pudo eliminar la naturaleza."),
-            );
+        } catch (err) {
+            toast.error(mensajeError(err, "No se pudo eliminar la naturaleza."));
             setEliminar(null);
         }
     }
@@ -137,17 +128,19 @@ export function NaturalezasTable() {
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Naturalezas de Concepto</CardTitle>
+                <CardTitle>Naturalezas de concepto</CardTitle>
 
                 <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger
-                        render={
-                            <Button onClick={abrirNuevo}>
-                                <Plus />
-                                Nueva naturaleza
-                            </Button>
-                        }
-                    />
+                    {esAdmin && (
+                        <DialogTrigger
+                            render={
+                                <Button onClick={abrirNuevo}>
+                                    <Plus />
+                                    Nueva naturaleza
+                                </Button>
+                            }
+                        />
+                    )}
                     <DialogContent className="sm:max-w-lg">
                         <form onSubmit={handleSubmit}>
                             <DialogHeader>
@@ -157,9 +150,9 @@ export function NaturalezasTable() {
                                         : "Nueva naturaleza"}
                                 </DialogTitle>
                                 <DialogDescription>
-                                    Las naturalezas clasifican los conceptos de
-                                    nómina (percepción, deducción, provisión,
-                                    etc.).
+                                    El cálculo totaliza ingresos, descuentos y
+                                    provisiones según los códigos PERCEPCION,
+                                    DEDUCCION y PROVISION.
                                 </DialogDescription>
                             </DialogHeader>
 
@@ -326,6 +319,7 @@ export function NaturalezasTable() {
                                         </TableCell>
                                         <TableCell>{n.orden}</TableCell>
                                         <TableCell>
+                                            {esAdmin && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger
                                                     render={
@@ -357,6 +351,7 @@ export function NaturalezasTable() {
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))

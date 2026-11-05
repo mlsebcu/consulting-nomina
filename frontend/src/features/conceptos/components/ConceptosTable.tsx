@@ -1,22 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
-import type {
-    Concepto,
-    CreateConceptoDto,
-    NaturalezaConcepto,
-} from "../Conceptos.types";
-import { conceptosApi } from "../Conceptos.api";
+import { toast } from "sonner";
+import { FileSliders, Loader2, LockIcon, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 import {
     Dialog,
     DialogContent,
@@ -24,8 +13,15 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
@@ -34,54 +30,60 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import {
-    Pencil,
-    Trash2,
-    Plus,
-    Loader2,
-    MoreHorizontal,
-    FileSliders,
-} from "lucide-react";
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/context/AuthContext";
+import { mensajeError } from "@/utils/errores";
+import { conceptosApi } from "../Conceptos.api";
+import type { Concepto, CreateConceptoDto, NaturalezaConcepto } from "../Conceptos.types";
 import { ReglasFiscalesDialog } from "./ReglasFiscalesDialog";
 
 const FORM_INICIAL: CreateConceptoDto = {
     codigo: "",
     nombre: "",
     naturalezaId: 0,
-    tipoCalculo: "FIJO",
+    tipoCalculo: "MANUAL",
     cuentaContable: "",
     orden: 0,
-    esSistema: false,
 };
 
-const TIPOS_CALCULO = [
-    { value: "FIJO", label: "Fijo" },
-    { value: "PORCENTAJE", label: "Porcentaje" },
-    { value: "FORMULA", label: "Fórmula" },
-    { value: "MANUAL", label: "Manual" },
-];
+const TIPOS_CALCULO = {
+    FIJO: "Fijo",
+    PORCENTAJE: "Porcentaje",
+    FORMULA: "Fórmula",
+    MANUAL: "Manual (por novedad)",
+} as const;
+
+const COLOR_NATURALEZA: Record<string, string> = {
+    PERCEPCION: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+    DEDUCCION: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+    PROVISION: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+};
 
 export function ConceptosTable() {
+    const { esAdmin } = useAuth();
     const [conceptos, setConceptos] = useState<Concepto[]>([]);
     const [naturalezas, setNaturalezas] = useState<NaturalezaConcepto[]>([]);
     const [form, setForm] = useState<CreateConceptoDto>(FORM_INICIAL);
-    const [editId, setEditId] = useState<number | null>(null);
+    const [editando, setEditando] = useState<Concepto | null>(null);
     const [error, setError] = useState("");
     const [open, setOpen] = useState(false);
-    const [cargando, setCargando] = useState(false);
+    const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
     const [eliminar, setEliminar] = useState<Concepto | null>(null);
     const [reglasConcepto, setReglasConcepto] = useState<Concepto | null>(null);
 
+    const bloqueado = editando?.esSistema ?? false;
+    const opcionesNaturaleza = Object.fromEntries(
+        naturalezas.map((n) => [String(n.naturalezaId), n.nombre]),
+    );
+
     async function cargar() {
-        setCargando(true);
         try {
             const [conceptosData, naturalezasData] = await Promise.all([
                 conceptosApi.getAllConceptos(),
@@ -89,362 +91,136 @@ export function ConceptosTable() {
             ]);
             setConceptos(conceptosData);
             setNaturalezas(naturalezasData);
-        } catch {
-            setError("No se pudieron cargar los conceptos.");
+        } catch (err) {
+            toast.error(mensajeError(err, "No se pudieron cargar los conceptos."));
         } finally {
             setCargando(false);
         }
     }
 
     useEffect(() => {
-        cargar();
+        void cargar();
     }, []);
 
-    function abrirNuevo() {
-        setEditId(null);
-        setForm(FORM_INICIAL);
-        setError("");
-        setOpen(true);
-    }
-
-    function abrirEditar(c: Concepto) {
-        setEditId(c.conceptoId);
-        setForm({
-            codigo: c.codigo,
-            nombre: c.nombre,
-            naturalezaId: c.naturalezaId,
-            tipoCalculo: c.tipoCalculo,
-            cuentaContable: c.cuentaContable ?? "",
-            orden: c.orden,
-            esSistema: c.esSistema,
-        });
+    function abrirFormulario(c?: Concepto) {
+        setEditando(c ?? null);
+        setForm(
+            c
+                ? {
+                      codigo: c.codigo,
+                      nombre: c.nombre,
+                      naturalezaId: c.naturalezaId,
+                      tipoCalculo: c.tipoCalculo,
+                      cuentaContable: c.cuentaContable ?? "",
+                      orden: c.orden,
+                  }
+                : FORM_INICIAL,
+        );
         setError("");
         setOpen(true);
     }
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        setError("");
-
         if (!form.naturalezaId) {
-            setError("Debe seleccionar una naturaleza.");
+            setError("Seleccione la naturaleza del concepto.");
             return;
         }
-
+        setError("");
         setGuardando(true);
         try {
-            const dto: CreateConceptoDto = {
-                ...form,
-                cuentaContable: form.cuentaContable || undefined,
-            };
-
-            if (editId) {
-                await conceptosApi.updateConcepto(editId, dto);
+            const dto = { ...form, cuentaContable: form.cuentaContable || undefined };
+            if (editando) {
+                await conceptosApi.updateConcepto(editando.conceptoId, dto);
+                toast.success("Concepto actualizado");
             } else {
                 await conceptosApi.createConcepto(dto);
+                toast.success("Concepto creado");
             }
             setOpen(false);
             await cargar();
-        } catch (err: unknown) {
-            const axiosError = err as {
-                response?: { data?: { message?: string | string[] } };
-            };
-            const mensaje = axiosError.response?.data?.message;
-            setError(
-                Array.isArray(mensaje)
-                    ? mensaje.join(", ")
-                    : (mensaje ?? "No se pudo guardar el concepto."),
-            );
+        } catch (err) {
+            setError(mensajeError(err, "No se pudo guardar el concepto."));
         } finally {
             setGuardando(false);
         }
     }
 
-    async function handleEliminar() {
+    async function confirmarEliminar() {
         if (!eliminar) return;
+        setGuardando(true);
         try {
             await conceptosApi.removeConcepto(eliminar.conceptoId);
-            setEliminar(null);
+            toast.success("Concepto eliminado");
             await cargar();
-        } catch (err: unknown) {
-            const axiosError = err as {
-                response?: { data?: { message?: string | string[] } };
-            };
-            const mensaje = axiosError.response?.data?.message;
-            alert(
-                Array.isArray(mensaje)
-                    ? mensaje.join(", ")
-                    : (mensaje ?? "No se pudo eliminar el concepto."),
-            );
+        } catch (err) {
+            toast.error(mensajeError(err, "No se pudo eliminar el concepto."));
+        } finally {
+            setGuardando(false);
             setEliminar(null);
-        }
-    }
-
-    function colorNaturaleza(codigo: string) {
-        switch (codigo) {
-            case "PERCEPCION":
-                return "bg-green-100 text-green-800 hover:bg-green-100";
-            case "DEDUCCION":
-                return "bg-red-100 text-red-800 hover:bg-red-100";
-            case "PROVISION":
-                return "bg-blue-100 text-blue-800 hover:bg-blue-100";
-            default:
-                return "bg-gray-100 text-gray-800 hover:bg-gray-100";
         }
     }
 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Conceptos de Nómina</CardTitle>
-
-                <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger
-                        render={
-                            <Button onClick={abrirNuevo}>
-                                <Plus />
-                                Nuevo concepto
-                            </Button>
-                        }
-                    />
-                    <DialogContent className="sm:max-w-lg">
-                        <form onSubmit={handleSubmit}>
-                            <DialogHeader>
-                                <DialogTitle>
-                                    {editId
-                                        ? "Editar concepto"
-                                        : "Nuevo concepto"}
-                                </DialogTitle>
-                                <DialogDescription>
-                                    Los conceptos representan cada línea que
-                                    puede aparecer en una nómina: percepciones,
-                                    deducciones y provisiones.
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <div className="space-y-4 py-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="codigo">Código</Label>
-                                        <Input
-                                            id="codigo"
-                                            value={form.codigo}
-                                            onChange={(e) =>
-                                                setForm({
-                                                    ...form,
-                                                    codigo: e.target.value,
-                                                })
-                                            }
-                                            placeholder="Ej. 100"
-                                            required
-                                            maxLength={20}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="orden">Orden</Label>
-                                        <Input
-                                            id="orden"
-                                            type="number"
-                                            value={form.orden ?? 0}
-                                            onChange={(e) =>
-                                                setForm({
-                                                    ...form,
-                                                    orden: Number(
-                                                        e.target.value,
-                                                    ),
-                                                })
-                                            }
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="nombre">Nombre</Label>
-                                    <Input
-                                        id="nombre"
-                                        value={form.nombre}
-                                        onChange={(e) =>
-                                            setForm({
-                                                ...form,
-                                                nombre: e.target.value,
-                                            })
-                                        }
-                                        placeholder="Ej. Salario Base"
-                                        required
-                                        maxLength={100}
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="naturalezaId">
-                                        Naturaleza
-                                    </Label>
-                                    <Select
-                                        value={
-                                            form.naturalezaId
-                                                ? String(form.naturalezaId)
-                                                : undefined
-                                        }
-                                        onValueChange={(v) =>
-                                            v &&
-                                            setForm({
-                                                ...form,
-                                                naturalezaId: Number(v),
-                                            })
-                                        }
-                                    >
-                                        <SelectTrigger id="naturalezaId">
-                                            <SelectValue placeholder="Seleccione una naturaleza" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {naturalezas.map((n) => (
-                                                <SelectItem
-                                                    key={n.naturalezaId}
-                                                    value={String(
-                                                        n.naturalezaId,
-                                                    )}
-                                                >
-                                                    {n.nombre}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="tipoCalculo">
-                                            Tipo de cálculo
-                                        </Label>
-                                        <Select
-                                            value={form.tipoCalculo}
-                                            onValueChange={(v) =>
-                                                v &&
-                                                setForm({
-                                                    ...form,
-                                                    tipoCalculo: v,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger id="tipoCalculo">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {TIPOS_CALCULO.map((t) => (
-                                                    <SelectItem
-                                                        key={t.value}
-                                                        value={t.value}
-                                                    >
-                                                        {t.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="cuentaContable">
-                                            Cuenta contable
-                                        </Label>
-                                        <Input
-                                            id="cuentaContable"
-                                            value={form.cuentaContable ?? ""}
-                                            onChange={(e) =>
-                                                setForm({
-                                                    ...form,
-                                                    cuentaContable:
-                                                        e.target.value,
-                                                })
-                                            }
-                                            placeholder="Ej. 5101-01"
-                                            maxLength={20}
-                                        />
-                                    </div>
-                                </div>
-
-                                {error && (
-                                    <Alert variant="destructive">
-                                        <AlertDescription>
-                                            {error}
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </div>
-
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    Cancelar
-                                </Button>
-                                <Button type="submit" disabled={guardando}>
-                                    {guardando ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Guardando...
-                                        </>
-                                    ) : editId ? (
-                                        "Guardar cambios"
-                                    ) : (
-                                        "Crear concepto"
-                                    )}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                <CardTitle>Conceptos de nómina</CardTitle>
+                {esAdmin && (
+                    <Button onClick={() => abrirFormulario()}>
+                        <Plus />
+                        Nuevo concepto
+                    </Button>
+                )}
             </CardHeader>
 
             <CardContent>
                 {cargando ? (
                     <div className="flex justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        <Loader2 className="size-6 animate-spin text-muted-foreground" />
                     </div>
                 ) : (
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Código</TableHead>
+                                <TableHead className="w-20">Código</TableHead>
                                 <TableHead>Nombre</TableHead>
                                 <TableHead>Naturaleza</TableHead>
-                                <TableHead>Tipo</TableHead>
+                                <TableHead>Cálculo</TableHead>
                                 <TableHead>Cuenta</TableHead>
-                                <TableHead className="w-12" />
+                                <TableHead className="w-12">
+                                    <span className="sr-only">Acciones</span>
+                                </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {conceptos.length === 0 ? (
                                 <TableRow>
-                                    <TableCell
-                                        colSpan={6}
-                                        className="text-center text-muted-foreground py-8"
-                                    >
+                                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                                         No hay conceptos registrados
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 conceptos.map((c) => (
                                     <TableRow key={c.conceptoId}>
-                                        <TableCell className="font-mono text-xs">
-                                            {c.codigo}
-                                        </TableCell>
+                                        <TableCell className="font-mono text-xs">{c.codigo}</TableCell>
                                         <TableCell className="font-medium">
-                                            {c.nombre}
+                                            <span className="flex items-center gap-2">
+                                                {c.nombre}
+                                                {c.esSistema && (
+                                                    <Badge variant="outline" className="gap-1">
+                                                        <LockIcon className="size-3" />
+                                                        Sistema
+                                                    </Badge>
+                                                )}
+                                            </span>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge
-                                                className={colorNaturaleza(
-                                                    c.naturaleza?.codigo ?? "",
-                                                )}
-                                            >
+                                            <Badge className={COLOR_NATURALEZA[c.naturaleza?.codigo ?? ""]}>
                                                 {c.naturaleza?.nombre ?? "-"}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell>{c.tipoCalculo}</TableCell>
-                                        <TableCell className="font-mono text-xs">
-                                            {c.cuentaContable ?? "-"}
-                                        </TableCell>
+                                        <TableCell>{TIPOS_CALCULO[c.tipoCalculo]}</TableCell>
+                                        <TableCell className="font-mono text-xs">{c.cuentaContable ?? "-"}</TableCell>
                                         <TableCell>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger
@@ -452,37 +228,32 @@ export function ConceptosTable() {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
+                                                            aria-label={`Acciones para ${c.nombre}`}
                                                         >
                                                             <MoreHorizontal />
                                                         </Button>
                                                     }
                                                 />
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            abrirEditar(c)
-                                                        }
-                                                    >
-                                                        <Pencil />
-                                                        Editar
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() =>
-                                                            setReglasConcepto(c)
-                                                        }
-                                                    >
+                                                    <DropdownMenuItem onClick={() => setReglasConcepto(c)}>
                                                         <FileSliders />
-                                                        Reglas fiscales
+                                                        Tratamiento fiscal
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        variant="destructive"
-                                                        onClick={() =>
-                                                            setEliminar(c)
-                                                        }
-                                                    >
-                                                        <Trash2 />
-                                                        Eliminar
-                                                    </DropdownMenuItem>
+                                                    {esAdmin && (
+                                                        <DropdownMenuItem onClick={() => abrirFormulario(c)}>
+                                                            <Pencil />
+                                                            Editar
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {esAdmin && !c.esSistema && (
+                                                        <DropdownMenuItem
+                                                            variant="destructive"
+                                                            onClick={() => setEliminar(c)}
+                                                        >
+                                                            <Trash2 />
+                                                            Eliminar
+                                                        </DropdownMenuItem>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -494,40 +265,157 @@ export function ConceptosTable() {
                 )}
             </CardContent>
 
-            {/* Dialog de eliminación */}
-            <Dialog
-                open={!!eliminar}
-                onOpenChange={(open) => !open && setEliminar(null)}
-            >
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Eliminar concepto</DialogTitle>
-                        <DialogDescription>
-                            ¿Está seguro que desea eliminar el concepto{" "}
-                            <strong>{eliminar?.nombre}</strong>? No se podrá
-                            eliminar si ya fue usado en nóminas.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setEliminar(null)}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button variant="destructive" onClick={handleEliminar}>
-                            Eliminar
-                        </Button>
-                    </DialogFooter>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="sm:max-w-lg">
+                    <form onSubmit={handleSubmit}>
+                        <DialogHeader>
+                            <DialogTitle>{editando ? "Editar concepto" : "Nuevo concepto"}</DialogTitle>
+                            <DialogDescription>
+                                Los conceptos manuales se capturan como novedades del período y el cálculo
+                                los incluye automáticamente.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-4 py-4">
+                            {bloqueado && (
+                                <Alert>
+                                    <LockIcon />
+                                    <AlertDescription>
+                                        Concepto de sistema: el código, la naturaleza y el tipo de cálculo
+                                        los usa el motor de nómina y no se pueden modificar.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="codigo">Código</Label>
+                                    <Input
+                                        id="codigo"
+                                        value={form.codigo}
+                                        onChange={(e) => setForm({ ...form, codigo: e.target.value })}
+                                        placeholder="106"
+                                        maxLength={20}
+                                        disabled={bloqueado}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="orden">Orden en el recibo</Label>
+                                    <Input
+                                        id="orden"
+                                        type="number"
+                                        min={0}
+                                        value={form.orden ?? 0}
+                                        onChange={(e) => setForm({ ...form, orden: Number(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="nombre">Nombre</Label>
+                                <Input
+                                    id="nombre"
+                                    value={form.nombre}
+                                    onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                                    maxLength={100}
+                                    required
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="naturalezaId">Naturaleza</Label>
+                                    <Select
+                                        items={opcionesNaturaleza}
+                                        value={form.naturalezaId ? String(form.naturalezaId) : ""}
+                                        onValueChange={(v) => v && setForm({ ...form, naturalezaId: Number(v) })}
+                                        disabled={bloqueado}
+                                    >
+                                        <SelectTrigger id="naturalezaId" className="w-full">
+                                            <SelectValue placeholder="Seleccione" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {naturalezas.map((n) => (
+                                                <SelectItem key={n.naturalezaId} value={String(n.naturalezaId)}>
+                                                    {n.nombre}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tipoCalculo">Tipo de cálculo</Label>
+                                    <Select
+                                        items={TIPOS_CALCULO}
+                                        value={form.tipoCalculo}
+                                        onValueChange={(v) => v && setForm({ ...form, tipoCalculo: v })}
+                                        disabled={bloqueado}
+                                    >
+                                        <SelectTrigger id="tipoCalculo" className="w-full">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.entries(TIPOS_CALCULO).map(([valor, etiqueta]) => (
+                                                <SelectItem key={valor} value={valor}>
+                                                    {etiqueta}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="cuentaContable">Cuenta contable</Label>
+                                <Input
+                                    id="cuentaContable"
+                                    value={form.cuentaContable ?? ""}
+                                    onChange={(e) => setForm({ ...form, cuentaContable: e.target.value })}
+                                    placeholder="2101-05"
+                                    pattern="\d{4}-\d{2}"
+                                    title="Formato 0000-00"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Requerida en descuentos para que la póliza cuadre.
+                                </p>
+                            </div>
+
+                            {error && (
+                                <Alert variant="destructive">
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={guardando}>
+                                {guardando && <Loader2 className="animate-spin" />}
+                                {editando ? "Guardar cambios" : "Crear concepto"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog de reglas fiscales */}
+            <ConfirmDialog
+                open={!!eliminar}
+                titulo="Eliminar concepto"
+                descripcion={`Se eliminará ${eliminar?.nombre ?? ""}. Las nóminas ya calculadas conservan el detalle histórico.`}
+                textoConfirmar="Eliminar"
+                destructivo
+                procesando={guardando}
+                onConfirmar={confirmarEliminar}
+                onCancelar={() => setEliminar(null)}
+            />
+
             {reglasConcepto && (
                 <ReglasFiscalesDialog
                     concepto={reglasConcepto}
                     open={!!reglasConcepto}
-                    onOpenChange={(open) => !open && setReglasConcepto(null)}
+                    onOpenChange={(abierto) => !abierto && setReglasConcepto(null)}
                 />
             )}
         </Card>

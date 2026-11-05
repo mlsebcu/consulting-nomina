@@ -1,12 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 import payrollImage from "@/assets/payroll-image.png";
+import { RUTA_INICIAL } from "@/routes/navegacion";
+import { mensajeError } from "@/utils/errores";
+
+const PASSWORD_MIN_LENGTH = 8;
 
 export function LoginForm({
   className,
@@ -18,6 +23,8 @@ export function LoginForm({
   const [cargando, setCargando] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const destino = (location.state as { desde?: string } | null)?.desde ?? RUTA_INICIAL;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -25,17 +32,9 @@ export function LoginForm({
     setCargando(true);
     try {
       await login(nombreUsuario, password);
-      navigate("/empleados");
-    } catch (err: unknown) {
-      const axiosError = err as {
-        response?: { data?: { message?: string | string[] } };
-      };
-      const mensaje = axiosError.response?.data?.message;
-      setError(
-        Array.isArray(mensaje)
-          ? mensaje.join(", ")
-          : (mensaje ?? "Usuario o contraseña incorrectos"),
-      );
+      navigate(destino, { replace: true });
+    } catch (err) {
+      setError(mensajeError(err, "Usuario o contraseña incorrectos"));
     } finally {
       setCargando(false);
     }
@@ -62,6 +61,7 @@ export function LoginForm({
                   onChange={(e) => setNombreUsuario(e.target.value)}
                   required
                   autoComplete="username"
+                  autoFocus
                 />
               </Field>
 
@@ -73,16 +73,21 @@ export function LoginForm({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={PASSWORD_MIN_LENGTH}
                   autoComplete="current-password"
                 />
               </Field>
 
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              {error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
+              )}
 
               <Field>
                 <Button type="submit" disabled={cargando}>
-                  {cargando ? "Iniciando sesión..." : "Iniciar sesión"}
+                  {cargando && <Loader2 className="animate-spin" />}
+                  {cargando ? "Iniciando sesión" : "Iniciar sesión"}
                 </Button>
               </Field>
             </FieldGroup>

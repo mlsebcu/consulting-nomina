@@ -1,7 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
   IsEmail,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -9,103 +10,131 @@ import {
   IsPositive,
   IsString,
   Length,
+  Matches,
+  Max,
+  MaxLength,
   Min,
 } from 'class-validator';
+import {
+  DIAS_MAXIMOS_MES,
+  DPI_PATTERN,
+} from '../../common/constants/validacion';
+import {
+  EstadoCivil,
+  Genero,
+  TipoCuenta,
+} from '../../common/enums/nomina.enums';
 
 export class CreateEmpleadoDto {
-  @ApiProperty({ description: 'Código único del empleado', example: 'EMP001' })
+  @ApiProperty({ example: 'EMP-011' })
   @IsString()
-  @IsNotEmpty()
   @Length(3, 20)
   codigoEmpleado: string;
 
-  @ApiProperty({ description: 'Nombres del empleado', example: 'John Doe' })
+  @ApiProperty({ example: 'Ana' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   nombres: string;
 
-  @ApiProperty({ description: 'Apellidos del empleado', example: 'Smith' })
+  @ApiProperty({ example: 'López Méndez' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   apellidos: string;
 
-  @ApiProperty({ description: 'Número de identidad del empleado', example: '1234567890123' })
-  @IsString()
-  @Length(13, 13)
+  @ApiProperty({ example: '1234567890101' })
+  @Matches(DPI_PATTERN, { message: 'El DPI debe tener 13 dígitos' })
   dpi: string;
 
-  @ApiProperty({ description: 'Número de identificación tributaria', example: '12345678' })
-  @IsString()
+  @ApiPropertyOptional({ example: '1234567' })
   @IsOptional()
+  @IsString()
+  @MaxLength(15)
   nit?: string;
 
-  @ApiProperty({ description: 'Fecha de nacimiento del empleado', example: '1990-01-01' })
+  @ApiProperty({ example: '1990-01-15' })
   @IsDateString()
   fechaNacimiento: string;
 
-  @ApiProperty({ description: 'Género del empleado', example: 'M' })
-  @IsString()
-  genero: string;
+  @ApiProperty({ enum: Genero })
+  @IsEnum(Genero)
+  genero: Genero;
 
-  @ApiProperty({ description: 'Estado civil del empleado', example: 'Soltero' })
-  @IsString()
-  estadoCivil: string;
+  @ApiProperty({ enum: EstadoCivil })
+  @IsEnum(EstadoCivil)
+  estadoCivil: EstadoCivil;
 
-  @ApiProperty({ description: 'Dirección del empleado', example: 'Calle Principal 123' })
+  @ApiProperty({ example: 'Zona 10, Ciudad de Guatemala' })
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(250)
   direccion: string;
 
-  @ApiProperty({ description: 'Número de teléfono móvil del empleado', example: '555-1234' })
+  @ApiProperty({ example: '55551234' })
   @IsString()
+  @MaxLength(15)
   telefonoMovil: string;
 
-  @ApiProperty({ description: 'Correo electrónico personal del empleado', example: 'john.doe@example.com' })
+  @ApiProperty({ example: 'ana@correo.com' })
   @IsEmail()
+  @MaxLength(100)
   correoPersonal: string;
 
-  @ApiProperty({ description: 'Correo electrónico corporativo del empleado', example: 'john.doe@company.com' })
+  @ApiProperty({ example: 'ana.lopez@consulting.com' })
   @IsEmail()
+  @MaxLength(100)
   correoCorporativo: string;
 
-  @ApiProperty({ description: 'Nombre del contacto de emergencia', example: 'Jane Doe' })
+  @ApiProperty({ example: 'Carlos López' })
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
   contactoEmergenciaNombre: string;
 
-  @ApiProperty({ description: 'Teléfono del contacto de emergencia', example: '555-5678' })
+  @ApiProperty({ example: '55559876' })
   @IsString()
+  @MaxLength(15)
   contactoEmergenciaTelefono: string;
 
-  @ApiProperty({ description: 'Nombre del banco', example: 'Banco Nacional' })
+  @ApiProperty({ example: 'Banco Industrial' })
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
   banco: string;
 
-  @ApiProperty({ description: 'Tipo de cuenta', example: 'Monetaria' })
-  @IsString()
-  tipoCuenta: string;
+  @ApiProperty({ enum: TipoCuenta })
+  @IsEnum(TipoCuenta)
+  tipoCuenta: TipoCuenta;
 
-  @ApiProperty({ description: 'Número de cuenta bancaria', example: '1234567890' })
+  @ApiProperty({ example: '3000001234' })
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(30)
   numeroCuenta: string;
 
-  @ApiProperty({ description: 'Fecha de ingreso del empleado', example: '2020-01-01' })
+  @ApiProperty({ example: '2024-01-02' })
   @IsDateString()
   fechaIngreso: string;
 
-  @ApiProperty({ description: 'Puesto del empleado', example: 'Desarrollador' })
+  @ApiProperty({ example: 'Analista' })
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
   puesto: string;
 
-  @ApiProperty({ description: 'Salario base del empleado', example: 50000 })
-  @IsNumber()
+  @ApiProperty({ example: 7500 })
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsPositive()
   salarioBase: number;
 
-  @ApiProperty({ description: 'Días laborados', example: 20 })
+  @ApiProperty({ example: 30 })
   @IsInt()
   @Min(0)
+  @Max(DIAS_MAXIMOS_MES)
   diasLaborados: number;
 
-  @ApiProperty({ description: 'ID del departamento', example: 1 })
+  @ApiProperty({ example: 1 })
   @IsInt()
   @IsPositive()
   departamentoId: number;

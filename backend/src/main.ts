@@ -1,27 +1,50 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
+import { AppModule } from './app.module';
+import { DatabaseExceptionFilter } from './database/database-exception.filter';
+
+const PUERTO_POR_DEFECTO = 3000;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const config = app.get(ConfigService);
+  const esProduccion = config.get('NODE_ENV') === 'production';
+
+  // Swagger UI usa scripts en línea, solo disponible fuera de producción
+  app.use(helmet({ contentSecurityPolicy: esProduccion ? undefined : false }));
   app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+  app.useGlobalFilters(new DatabaseExceptionFilter());
+  app.enableCors({
+    origin: config
+      .getOrThrow<string>('CORS_ORIGINS')
+      .split(',')
+      .map((origen) => origen.trim()),
+  });
+  app.enableShutdownHooks();
 
-  if (process.env.NODE_ENV === 'development') {
-    const config = new DocumentBuilder()
-      .setTitle('API Nómina - Consulting, S.A.')
-      .setDescription('Documentación de endpoints: Auth, Empleados, Deparatmentos, Nómina y Reportes')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('docs', app, document);
+  if (!esProduccion) {
+    const documento = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder()
+        .setTitle('API Nómina - Consulting, S.A.')
+        .setVersion('1.0')
+        .addBearerAuth()
+        .build(),
+    );
+    SwaggerModule.setup('docs', app, documento);
   }
 
-  app.enableCors({ origin: 'http://localhost:5173' });
-
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(config.get<number>('PORT') ?? PUERTO_POR_DEFECTO);
 }
-bootstrap();
+
+void bootstrap();

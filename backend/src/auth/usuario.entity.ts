@@ -1,45 +1,32 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { BaseEntity } from '../common/entities/base.entity';
+import { Rol } from '../common/enums/rol.enum';
 import { Empleado } from '../empleados/entities/empleado.entity';
 
-@Entity('Usuario')
-export class Usuario {
-  @PrimaryGeneratedColumn({ name: 'UsuarioId', type: 'int' })
+@Entity('usuario')
+export class Usuario extends BaseEntity {
+  @PrimaryGeneratedColumn()
   usuarioId: number;
 
-  @Column({ name: 'NombreUsuario', type: 'varchar', length: 50, unique: true })
+  @Column({ type: 'varchar', length: 50, unique: true })
   nombreUsuario: string;
 
-  @Column({ name: 'PasswordHash', type: 'varchar', length: 200 })
+  @Column({ type: 'varchar', length: 200, select: false })
   passwordHash: string;
 
-  @Column({ name: 'Rol', type: 'varchar', length: 20 })
-  rol: 'ADMIN' | 'RRHH';
+  @Column({ type: 'varchar', length: 20 })
+  rol: Rol;
 
-  @Column({ name: 'EmpleadoId', type: 'int', nullable: true })
+  @Column({ type: 'int', nullable: true })
   empleadoId: number | null;
 
   @ManyToOne(() => Empleado, { nullable: true })
-  @JoinColumn({ name: 'EmpleadoId' })
+  @JoinColumn({ name: 'empleado_id' })
   empleado: Empleado | null;
-
-  @Column({ name: 'Activo', type: 'bit', default: true })
-  activo: boolean;
-
-  @Column({ name: 'FechaCreacion', type: 'datetime', default: () => 'GETDATE()' })
-  fechaCreacion: Date;
-
-  @Column({ name: 'FechaModificacion', type: 'datetime', nullable: true })
-  fechaModificacion: Date | null;
-
-  @Column({ name: 'CreadoPor', type: 'int', nullable: true })
-  creadoPor: number | null;
-
-  @Column({ name: 'ModificadoPor', type: 'int', nullable: true })
-  modificadoPor: number | null;
-
-  @Column({ name: 'EliminadoPor', type: 'int', nullable: true })
-  eliminadoPor: number | null;
-
-  @Column({ name: 'FechaEliminacion', type: 'datetime', nullable: true })
-  fechaEliminacion: Date | null;
 }

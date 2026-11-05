@@ -7,34 +7,33 @@ import {
   Param,
   Delete,
   ParseIntPipe,
-} from "@nestjs/common";
-import { ConceptosService } from "./conceptos.service";
-import { CreateConceptoDto } from "./dto/create-concepto.dto";
-import { UpdateConceptoDto } from "./dto/update-concepto.dto";
-import { Roles } from "../auth/roles.decorator";
-import { Rol } from "../common/enums/rol.enum";
-import { CreateNaturalezaDto } from "./dto/create-naturaleza.dto";
-import { UpdateNaturalezaDto } from "./dto/update-naturaleza.dto";
-import { CreateReglaFiscalDto } from "./dto/create-regla-fiscal.dto";
-import { UpdateReglaFiscalDto } from "./dto/update-regla-fiscal.dto";
-import { CurrentUser } from "../common/decorators/current-user.decorator";
-import type { UsuarioAutenticado } from "../common/interfaces/usuario-autenticado.interface";
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ConceptosService } from './conceptos.service';
+import { CreateConceptoDto } from './dto/create-concepto.dto';
+import { UpdateConceptoDto } from './dto/update-concepto.dto';
+import { Roles } from '../auth/roles.decorator';
+import { Rol } from '../common/enums/rol.enum';
+import { CreateNaturalezaDto } from './dto/create-naturaleza.dto';
+import { UpdateNaturalezaDto } from './dto/update-naturaleza.dto';
+import { CreateReglaFiscalDto } from './dto/create-regla-fiscal.dto';
+import { UpdateReglaFiscalDto } from './dto/update-regla-fiscal.dto';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
 
-@Controller("conceptos")
+@ApiTags('Conceptos')
+@ApiBearerAuth()
+@Controller('conceptos')
 export class ConceptosController {
   constructor(private readonly conceptosService: ConceptosService) {}
 
-  // ============================================================
-  // NATURALEZAS
-  // ============================================================
-
-  @Get("naturalezas")
+  @Get('naturalezas')
   @Roles(Rol.ADMIN, Rol.RRHH)
   findAllNaturalezas() {
     return this.conceptosService.findAllNaturalezas();
   }
 
-  @Post("naturalezas")
+  @Post('naturalezas')
   @Roles(Rol.ADMIN)
   createNaturaleza(
     @Body() dto: CreateNaturalezaDto,
@@ -43,34 +42,30 @@ export class ConceptosController {
     return this.conceptosService.createNaturaleza(dto, user.usuarioId);
   }
 
-  @Get("naturalezas/:id")
+  @Get('naturalezas/:id')
   @Roles(Rol.ADMIN, Rol.RRHH)
-  findOneNaturaleza(@Param("id", ParseIntPipe) id: number) {
+  findOneNaturaleza(@Param('id', ParseIntPipe) id: number) {
     return this.conceptosService.findOneNaturaleza(id);
   }
 
-  @Patch("naturalezas/:id")
+  @Patch('naturalezas/:id')
   @Roles(Rol.ADMIN)
   updateNaturaleza(
-    @Param("id", ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateNaturalezaDto,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
     return this.conceptosService.updateNaturaleza(id, dto, user.usuarioId);
   }
 
-  @Delete("naturalezas/:id")
+  @Delete('naturalezas/:id')
   @Roles(Rol.ADMIN)
   removeNaturaleza(
-    @Param("id", ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
     return this.conceptosService.removeNaturaleza(id, user.usuarioId);
   }
-
-  // ============================================================
-  // CONCEPTOS
-  // ============================================================
 
   @Get()
   @Roles(Rol.ADMIN, Rol.RRHH)
@@ -87,56 +82,52 @@ export class ConceptosController {
     return this.conceptosService.createConcepto(dto, user.usuarioId);
   }
 
-  @Get(":id")
+  @Get(':id')
   @Roles(Rol.ADMIN, Rol.RRHH)
-  findOneConcepto(@Param("id", ParseIntPipe) id: number) {
+  findOneConcepto(@Param('id', ParseIntPipe) id: number) {
     return this.conceptosService.findOneConcepto(id);
   }
 
-  @Patch(":id")
+  @Patch(':id')
   @Roles(Rol.ADMIN)
   updateConcepto(
-    @Param("id", ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateConceptoDto,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
     return this.conceptosService.updateConcepto(id, dto, user.usuarioId);
   }
 
-  @Delete(":id")
+  @Delete(':id')
   @Roles(Rol.ADMIN)
   removeConcepto(
-    @Param("id", ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
     return this.conceptosService.removeConcepto(id, user.usuarioId);
   }
 
-  // ============================================================
-  // REGLAS FISCALES
-  // ============================================================
-
-  @Get(":id/reglas-fiscales")
+  @Get(':id/reglas-fiscales')
   @Roles(Rol.ADMIN, Rol.RRHH)
-  findReglasFiscales(@Param("id", ParseIntPipe) id: number) {
+  findReglasFiscales(@Param('id', ParseIntPipe) id: number) {
     return this.conceptosService.findReglasFiscalesByConcepto(id);
   }
 
-  @Post(":id/reglas-fiscales")
+  @Post(':id/reglas-fiscales')
   @Roles(Rol.ADMIN)
   createReglaFiscal(
-    @Param("id", ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateReglaFiscalDto,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
     return this.conceptosService.createReglaFiscal(id, dto, user.usuarioId);
   }
 
-  @Patch(":id/reglas-fiscales/:reglaId")
+  @Patch(':id/reglas-fiscales/:reglaId')
   @Roles(Rol.ADMIN)
   updateReglaFiscal(
-    @Param("id", ParseIntPipe) id: number,
-    @Param("reglaId", ParseIntPipe) reglaId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('reglaId', ParseIntPipe) reglaId: number,
     @Body() dto: UpdateReglaFiscalDto,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
@@ -148,11 +139,11 @@ export class ConceptosController {
     );
   }
 
-  @Delete(":id/reglas-fiscales/:reglaId")
+  @Delete(':id/reglas-fiscales/:reglaId')
   @Roles(Rol.ADMIN)
   removeReglaFiscal(
-    @Param("id", ParseIntPipe) id: number,
-    @Param("reglaId", ParseIntPipe) reglaId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('reglaId', ParseIntPipe) reglaId: number,
     @CurrentUser() user: UsuarioAutenticado,
   ) {
     return this.conceptosService.removeReglaFiscal(id, reglaId, user.usuarioId);

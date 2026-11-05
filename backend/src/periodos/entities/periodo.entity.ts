@@ -1,49 +1,50 @@
 import {
-    Column,
-    Entity,
-    JoinColumn,
-    ManyToOne,
-    PrimaryGeneratedColumn,
-} from "typeorm";
-import { BaseEntity } from "../../common/entities/base.entity";
-import { Usuario } from "../../auth/usuario.entity";
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Usuario } from '../../auth/usuario.entity';
+import { BaseEntity } from '../../common/entities/base.entity';
+import { EstadoPeriodo, TipoPeriodo } from '../../common/enums/nomina.enums';
 
-@Entity("Periodo")
+@Entity('periodo')
 export class Periodo extends BaseEntity {
-    @PrimaryGeneratedColumn({ name: "PeriodoId" })
-    periodoId: number;
+  @PrimaryGeneratedColumn()
+  periodoId: number;
 
-    @Column({ name: "Anio", type: "int" })
-    anio: number;
+  @Column({ type: 'int' })
+  anio: number;
 
-    @Column({ name: "Mes", type: "int" })
-    mes: number;
+  @Column({ type: 'int' })
+  mes: number;
 
-    @Column({ name: "Quincena", type: "int", nullable: true })
-    quincena: number | null;
+  @Column({ type: 'int', nullable: true })
+  quincena: number | null;
 
-    @Column({ name: "NumeroPeriodo", type: "int" })
-    numeroPeriodo: number;
+  @Column({ type: 'int' })
+  numeroPeriodo: number;
 
-    @Column({ name: "TipoPeriodo", type: "varchar", length: 10 })
-    tipoPeriodo: string;
+  @Column({ type: 'varchar', length: 10 })
+  tipoPeriodo: TipoPeriodo;
 
-    @Column({ name: "FechaInicio", type: "date" })
-    fechaInicio: string;
+  @Column({ type: 'date' })
+  fechaInicio: string;
 
-    @Column({ name: "FechaFin", type: "date" })
-    fechaFin: string;
+  @Column({ type: 'date' })
+  fechaFin: string;
 
-    @Column({ name: "Estado", type: "varchar", length: 15, default: "ABIERTO" })
-    estado: string;
+  @Column({ type: 'varchar', length: 15, default: EstadoPeriodo.ABIERTO })
+  estado: EstadoPeriodo;
 
-    @Column({ name: "FechaCierre", type: "datetime", nullable: true })
-    fechaCierre: Date | null;
+  @Column({ type: 'timestamptz', nullable: true })
+  fechaCierre: Date | null;
 
-    @Column({ name: "CerradoPor", type: "int", nullable: true })
-    cerradoPor: number | null;
+  @Column({ type: 'int', nullable: true })
+  cerradoPor: number | null;
 
-    @ManyToOne(() => Usuario, { nullable: true })
-    @JoinColumn({ name: "CerradoPor" })
-    usuarioCierre: Usuario | null;
+  @ManyToOne(() => Usuario, { nullable: true })
+  @JoinColumn({ name: 'cerrado_por' })
+  usuarioCierre: Usuario | null;
 }

@@ -1,13 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
-import type {
-    Concepto,
-    ConceptoReglaFiscal,
-    CreateReglaFiscalDto,
-} from "../Conceptos.types";
-import { conceptosApi } from "../Conceptos.api";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { toast } from "sonner";
+import { Loader2, Plus, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
     Dialog,
     DialogContent,
@@ -16,6 +13,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
@@ -31,17 +30,23 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Trash2, X } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { mensajeError } from "@/utils/errores";
+import { conceptosApi } from "../Conceptos.api";
+import type { Concepto, ConceptoReglaFiscal, CreateReglaFiscalDto } from "../Conceptos.types";
 
-const FORM_INICIAL: CreateReglaFiscalDto = {
-    pais: "GTM",
-    anio: new Date().getFullYear(),
-    tipoImpuesto: "ISR",
-    esGravable: false,
-    esBaseCalculo: false,
-};
+const PAIS_POR_DEFECTO = "GTM";
+const IMPUESTOS = { IGSS: "IGSS (cuota laboral)", ISR: "ISR (renta)" } as const;
+
+function formularioInicial(): CreateReglaFiscalDto {
+    return {
+        pais: PAIS_POR_DEFECTO,
+        anio: new Date().getFullYear(),
+        tipoImpuesto: "IGSS",
+        esGravable: true,
+        esBaseCalculo: true,
+    };
+}
 
 interface Props {
     concepto: Concepto;
@@ -49,35 +54,33 @@ interface Props {
     onOpenChange: (open: boolean) => void;
 }
 
+function SiNo({ valor }: { valor: boolean }) {
+    return <Badge variant={valor ? "default" : "outline"}>{valor ? "Sí" : "No"}</Badge>;
+}
+
 export function ReglasFiscalesDialog({ concepto, open, onOpenChange }: Props) {
+    const { esAdmin } = useAuth();
     const [reglas, setReglas] = useState<ConceptoReglaFiscal[]>([]);
-    const [form, setForm] = useState<CreateReglaFiscalDto>(FORM_INICIAL);
+    const [form, setForm] = useState<CreateReglaFiscalDto>(formularioInicial);
     const [mostrarForm, setMostrarForm] = useState(false);
+    const [eliminar, setEliminar] = useState<ConceptoReglaFiscal | null>(null);
     const [error, setError] = useState("");
-    const [cargando, setCargando] = useState(false);
+    const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
 
-    async function cargar() {
-        setCargando(true);
+    const cargar = useCallback(async () => {
         try {
-            setReglas(
-                await conceptosApi.getReglasFiscales(concepto.conceptoId),
-            );
-        } catch {
-            setError("No se pudieron cargar las reglas fiscales.");
+            setReglas(await conceptosApi.getReglasFiscales(concepto.conceptoId));
+        } catch (err) {
+            toast.error(mensajeError(err, "No se pudieron cargar las reglas fiscales."));
         } finally {
             setCargando(false);
         }
-    }
+    }, [concepto.conceptoId]);
 
     useEffect(() => {
-        if (open) {
-            cargar();
-            setForm(FORM_INICIAL);
-            setMostrarForm(false);
-            setError("");
-        }
-    }, [open]);
+        if (open) void cargar();
+    }, [open, cargar]);
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -85,98 +88,62 @@ export function ReglasFiscalesDialog({ concepto, open, onOpenChange }: Props) {
         setGuardando(true);
         try {
             await conceptosApi.createReglaFiscal(concepto.conceptoId, form);
-            setForm(FORM_INICIAL);
+            toast.success("Regla fiscal agregada");
+            setForm(formularioInicial());
             setMostrarForm(false);
             await cargar();
-        } catch (err: unknown) {
-            const axiosError = err as {
-                response?: { data?: { message?: string | string[] } };
-            };
-            const mensaje = axiosError.response?.data?.message;
-            setError(
-                Array.isArray(mensaje)
-                    ? mensaje.join(", ")
-                    : (mensaje ?? "No se pudo guardar la regla fiscal."),
-            );
+        } catch (err) {
+            setError(mensajeError(err, "No se pudo guardar la regla fiscal."));
         } finally {
             setGuardando(false);
         }
     }
 
-    async function handleEliminar(reglaId: number) {
-        if (!confirm("¿Eliminar esta regla fiscal?")) return;
+    async function confirmarEliminar() {
+        if (!eliminar) return;
+        setGuardando(true);
         try {
-            await conceptosApi.removeReglaFiscal(concepto.conceptoId, reglaId);
+            await conceptosApi.removeReglaFiscal(concepto.conceptoId, eliminar.conceptoReglaFiscalId);
+            toast.success("Regla fiscal eliminada");
             await cargar();
-        } catch {
-            alert("No se pudo eliminar la regla fiscal.");
+        } catch (err) {
+            toast.error(mensajeError(err, "No se pudo eliminar la regla fiscal."));
+        } finally {
+            setGuardando(false);
+            setEliminar(null);
         }
     }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle>
-                        Reglas fiscales — {concepto.nombre}
-                    </DialogTitle>
+                    <DialogTitle>Tratamiento fiscal: {concepto.nombre}</DialogTitle>
                     <DialogDescription>
-                        Configure cómo tributa este concepto según país, año e
-                        impuesto. Estas reglas determinan si el concepto es
-                        gravable y si forma parte de la base de cálculo.
+                        Define por año si el concepto forma parte de la base del IGSS y si es renta
+                        gravada para el ISR. Un concepto sin regla para el año no afecta impuestos.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
-                    {!mostrarForm && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setMostrarForm(true)}
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Nueva regla fiscal
+                    {esAdmin && !mostrarForm && (
+                        <Button variant="outline" size="sm" onClick={() => setMostrarForm(true)}>
+                            <Plus />
+                            Agregar regla
                         </Button>
                     )}
 
                     {mostrarForm && (
-                        <form
-                            onSubmit={handleSubmit}
-                            className="space-y-4 border rounded-lg p-4 bg-muted/30"
-                        >
-                            <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-semibold">
-                                    Nueva regla fiscal
-                                </h4>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                        setMostrarForm(false);
-                                        setForm(FORM_INICIAL);
-                                        setError("");
-                                    }}
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 <div className="space-y-2">
-                                    <Label htmlFor="pais">País</Label>
+                                    <Label htmlFor="pais">País (ISO)</Label>
                                     <Input
                                         id="pais"
                                         value={form.pais}
-                                        onChange={(e) =>
-                                            setForm({
-                                                ...form,
-                                                pais: e.target.value.toUpperCase(),
-                                            })
-                                        }
+                                        onChange={(e) => setForm({ ...form, pais: e.target.value.toUpperCase() })}
+                                        minLength={3}
                                         maxLength={3}
-                                        placeholder="GTM"
                                         required
                                     />
                                 </div>
@@ -186,71 +153,83 @@ export function ReglasFiscalesDialog({ concepto, open, onOpenChange }: Props) {
                                         id="anio"
                                         type="number"
                                         value={form.anio}
-                                        onChange={(e) =>
-                                            setForm({
-                                                ...form,
-                                                anio: Number(e.target.value),
-                                            })
-                                        }
+                                        onChange={(e) => setForm({ ...form, anio: Number(e.target.value) })}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="tipoImpuesto">
-                                        Tipo de impuesto
-                                    </Label>
+                                    <Label htmlFor="tipoImpuesto">Impuesto</Label>
                                     <Select
+                                        items={IMPUESTOS}
                                         value={form.tipoImpuesto}
-                                        onValueChange={(v) =>
-                                            v &&
-                                            setForm({
-                                                ...form,
-                                                tipoImpuesto: v,
-                                            })
-                                        }
+                                        onValueChange={(v) => v && setForm({ ...form, tipoImpuesto: v })}
                                     >
-                                        <SelectTrigger id="tipoImpuesto">
+                                        <SelectTrigger id="tipoImpuesto" className="w-full">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="ISR">
-                                                ISR
-                                            </SelectItem>
-                                            <SelectItem value="IGSS">
-                                                IGSS
-                                            </SelectItem>
+                                            {Object.entries(IMPUESTOS).map(([valor, etiqueta]) => (
+                                                <SelectItem key={valor} value={valor}>
+                                                    {etiqueta}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <label className="flex items-center gap-2 text-sm">
                                     <input
                                         type="checkbox"
-                                        checked={form.esGravable}
-                                        onChange={(e) =>
-                                            setForm({
-                                                ...form,
-                                                esGravable: e.target.checked,
-                                            })
-                                        }
-                                    />
-                                    Es gravable
-                                </label>
-                                <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
+                                        className="size-4 accent-primary"
                                         checked={form.esBaseCalculo}
+                                        onChange={(e) => setForm({ ...form, esBaseCalculo: e.target.checked })}
+                                    />
+                                    Forma parte de la base del IGSS
+                                </label>
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        className="size-4 accent-primary"
+                                        checked={form.esGravable}
+                                        onChange={(e) => setForm({ ...form, esGravable: e.target.checked })}
+                                    />
+                                    Es renta gravada para ISR
+                                </label>
+                                <div className="space-y-2">
+                                    <Label htmlFor="porcentajeExencion">Exención (%)</Label>
+                                    <Input
+                                        id="porcentajeExencion"
+                                        type="number"
+                                        min={0}
+                                        max={100}
+                                        step="0.01"
+                                        value={form.porcentajeExencion ?? ""}
                                         onChange={(e) =>
                                             setForm({
                                                 ...form,
-                                                esBaseCalculo: e.target.checked,
+                                                porcentajeExencion: e.target.value ? Number(e.target.value) : undefined,
                                             })
                                         }
                                     />
-                                    Forma parte de la base
-                                </label>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="limiteExencion">Tope de exención (Q)</Label>
+                                    <Input
+                                        id="limiteExencion"
+                                        type="number"
+                                        min={0}
+                                        step="0.01"
+                                        value={form.limiteExencion ?? ""}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                limiteExencion: e.target.value ? Number(e.target.value) : undefined,
+                                            })
+                                        }
+                                    />
+                                </div>
                             </div>
 
                             {error && (
@@ -259,20 +238,21 @@ export function ReglasFiscalesDialog({ concepto, open, onOpenChange }: Props) {
                                 </Alert>
                             )}
 
-                            <div className="flex justify-end">
+                            <div className="flex justify-end gap-2">
                                 <Button
-                                    type="submit"
-                                    disabled={guardando}
+                                    type="button"
+                                    variant="ghost"
                                     size="sm"
+                                    onClick={() => {
+                                        setMostrarForm(false);
+                                        setError("");
+                                    }}
                                 >
-                                    {guardando ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Guardando...
-                                        </>
-                                    ) : (
-                                        "Guardar regla"
-                                    )}
+                                    Cancelar
+                                </Button>
+                                <Button type="submit" size="sm" disabled={guardando}>
+                                    {guardando && <Loader2 className="animate-spin" />}
+                                    Guardar regla
                                 </Button>
                             </div>
                         </form>
@@ -280,72 +260,54 @@ export function ReglasFiscalesDialog({ concepto, open, onOpenChange }: Props) {
 
                     {cargando ? (
                         <div className="flex justify-center py-8">
-                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                            <Loader2 className="size-6 animate-spin text-muted-foreground" />
                         </div>
                     ) : reglas.length === 0 ? (
-                        <div className="text-center text-muted-foreground py-8">
-                            No hay reglas fiscales configuradas para este
-                            concepto.
-                        </div>
+                        <p className="py-8 text-center text-muted-foreground">
+                            Este concepto no tiene reglas fiscales; no afecta IGSS ni ISR.
+                        </p>
                     ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>País</TableHead>
                                     <TableHead>Año</TableHead>
+                                    <TableHead>País</TableHead>
                                     <TableHead>Impuesto</TableHead>
-                                    <TableHead>Gravable</TableHead>
-                                    <TableHead>Base</TableHead>
-                                    <TableHead className="w-12" />
+                                    <TableHead>Base IGSS</TableHead>
+                                    <TableHead>Gravado ISR</TableHead>
+                                    <TableHead>Exención</TableHead>
+                                    {esAdmin && <TableHead className="w-12" />}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {reglas.map((r) => (
                                     <TableRow key={r.conceptoReglaFiscalId}>
-                                        <TableCell className="font-mono text-xs">
-                                            {r.pais}
-                                        </TableCell>
                                         <TableCell>{r.anio}</TableCell>
+                                        <TableCell className="font-mono text-xs">{r.pais}</TableCell>
                                         <TableCell>
-                                            <Badge variant="outline">
-                                                {r.tipoImpuesto}
-                                            </Badge>
+                                            <Badge variant="outline">{r.tipoImpuesto}</Badge>
                                         </TableCell>
                                         <TableCell>
-                                            {r.esGravable ? (
-                                                <Badge className="bg-red-100 text-red-800">
-                                                    Sí
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="outline">
-                                                    No
-                                                </Badge>
-                                            )}
+                                            <SiNo valor={r.esBaseCalculo} />
                                         </TableCell>
                                         <TableCell>
-                                            {r.esBaseCalculo ? (
-                                                <Badge className="bg-blue-100 text-blue-800">
-                                                    Sí
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="outline">
-                                                    No
-                                                </Badge>
-                                            )}
+                                            <SiNo valor={r.esGravable} />
                                         </TableCell>
-                                        <TableCell>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() =>
-                                                    handleEliminar(
-                                                        r.conceptoReglaFiscalId,
-                                                    )
-                                                }
-                                            >
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
+                                        <TableCell className="text-muted-foreground">
+                                            {r.porcentajeExencion ? `${r.porcentajeExencion} %` : "-"}
                                         </TableCell>
+                                        {esAdmin && (
+                                            <TableCell>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    aria-label="Eliminar regla"
+                                                    onClick={() => setEliminar(r)}
+                                                >
+                                                    <Trash2 className="text-destructive" />
+                                                </Button>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -354,13 +316,21 @@ export function ReglasFiscalesDialog({ concepto, open, onOpenChange }: Props) {
                 </div>
 
                 <DialogFooter>
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                    >
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Cerrar
                     </Button>
                 </DialogFooter>
+
+                <ConfirmDialog
+                    open={!!eliminar}
+                    titulo="Eliminar regla fiscal"
+                    descripcion={`La regla ${eliminar?.tipoImpuesto ?? ""} ${eliminar?.anio ?? ""} dejará de aplicarse en los próximos cálculos.`}
+                    textoConfirmar="Eliminar"
+                    destructivo
+                    procesando={guardando}
+                    onConfirmar={confirmarEliminar}
+                    onCancelar={() => setEliminar(null)}
+                />
             </DialogContent>
         </Dialog>
     );

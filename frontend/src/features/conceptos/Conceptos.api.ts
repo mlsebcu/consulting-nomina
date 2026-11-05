@@ -12,9 +12,6 @@ import type {
 } from "./Conceptos.types";
 
 export const conceptosApi = {
-    // ============================================================
-    // NATURALEZAS
-    // ============================================================
     getAllNaturalezas: () =>
         api
             .get<NaturalezaConcepto[]>("/conceptos/naturalezas")
@@ -33,9 +30,6 @@ export const conceptosApi = {
     removeNaturaleza: (id: number) =>
         api.delete(`/conceptos/naturalezas/${id}`),
 
-    // ============================================================
-    // CONCEPTOS
-    // ============================================================
     getAllConceptos: () =>
         api.get<Concepto[]>("/conceptos").then((r) => r.data),
 
@@ -47,9 +41,6 @@ export const conceptosApi = {
 
     removeConcepto: (id: number) => api.delete(`/conceptos/${id}`),
 
-    // ============================================================
-    // REGLAS FISCALES
-    // ============================================================
     getReglasFiscales: (conceptoId: number) =>
         api
             .get<ConceptoReglaFiscal[]>(
