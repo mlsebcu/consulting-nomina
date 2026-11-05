@@ -6,10 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, IsNull, Repository } from 'typeorm';
-import { EstadoPeriodo, TipoPeriodo } from '../common/enums/nomina.enums';
-import { CreatePeriodoDto } from './dto/create-periodo.dto';
-import { UpdatePeriodoDto } from './dto/update-periodo.dto';
-import { Periodo } from './entities/periodo.entity';
+import { EstadoPeriodo, TipoPeriodo } from '../common/enums/nomina.enums.js';
+import { CreatePeriodoDto } from './dto/create-periodo.dto.js';
+import { UpdatePeriodoDto } from './dto/update-periodo.dto.js';
+import { Periodo } from './entities/periodo.entity.js';
 
 const ORDEN_RECIENTES = {
   anio: 'DESC',

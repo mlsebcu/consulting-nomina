@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { NominaModule } from '../nomina/nomina.module';
-import { PeriodosModule } from '../periodos/periodos.module';
-import { ReportesController } from './reportes.controller';
-import { ReportesService } from './reportes.service';
+import { NominaModule } from '../nomina/nomina.module.js';
+import { PeriodosModule } from '../periodos/periodos.module.js';
+import { ReportesController } from './reportes.controller.js';
+import { ReportesService } from './reportes.service.js';
 
 @Module({
   imports: [PeriodosModule, NominaModule],

@@ -12,8 +12,8 @@ import {
   ANIO_MAXIMO,
   ANIO_MINIMO,
   MESES_DEL_ANIO,
-} from '../../common/constants/validacion';
-import { TipoPeriodo } from '../../common/enums/nomina.enums';
+} from '../../common/constants/validacion.js';
+import { TipoPeriodo } from '../../common/enums/nomina.enums.js';
 
 export const QUINCENAS = [1, 2] as const;
 

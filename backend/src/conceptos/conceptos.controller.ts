@@ -9,17 +9,17 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ConceptosService } from './conceptos.service';
-import { CreateConceptoDto } from './dto/create-concepto.dto';
-import { UpdateConceptoDto } from './dto/update-concepto.dto';
-import { Roles } from '../auth/roles.decorator';
-import { Rol } from '../common/enums/rol.enum';
-import { CreateNaturalezaDto } from './dto/create-naturaleza.dto';
-import { UpdateNaturalezaDto } from './dto/update-naturaleza.dto';
-import { CreateReglaFiscalDto } from './dto/create-regla-fiscal.dto';
-import { UpdateReglaFiscalDto } from './dto/update-regla-fiscal.dto';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { ConceptosService } from './conceptos.service.js';
+import { CreateConceptoDto } from './dto/create-concepto.dto.js';
+import { UpdateConceptoDto } from './dto/update-concepto.dto.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import { CreateNaturalezaDto } from './dto/create-naturaleza.dto.js';
+import { UpdateNaturalezaDto } from './dto/update-naturaleza.dto.js';
+import { CreateReglaFiscalDto } from './dto/create-regla-fiscal.dto.js';
+import { UpdateReglaFiscalDto } from './dto/update-regla-fiscal.dto.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface.js';
 
 @ApiTags('Conceptos')
 @ApiBearerAuth()

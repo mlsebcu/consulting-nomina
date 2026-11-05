@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { TipoNomina } from '../common/enums/nomina.enums';
-import { Departamento } from '../departamentos/entities/departamento.entity';
-import { Empleado } from '../empleados/entities/empleado.entity';
-import { NominaEmpleado } from '../nomina/entities/nomina-empleado.entity';
-import { Novedad } from '../novedades/entities/novedad.entity';
-import { PeriodosService } from '../periodos/periodos.service';
-import { ReportesService } from '../reportes/reportes.service';
+import { TipoNomina } from '../common/enums/nomina.enums.js';
+import { Departamento } from '../departamentos/entities/departamento.entity.js';
+import { Empleado } from '../empleados/entities/empleado.entity.js';
+import { NominaEmpleado } from '../nomina/entities/nomina-empleado.entity.js';
+import { Novedad } from '../novedades/entities/novedad.entity.js';
+import { PeriodosService } from '../periodos/periodos.service.js';
+import { ReportesService } from '../reportes/reportes.service.js';
 
 export interface UltimaNomina {
   periodoId: number;

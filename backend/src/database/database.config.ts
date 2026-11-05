@@ -1,15 +1,15 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { types } from 'pg';
+import pg from 'pg';
 import { DataSourceOptions } from 'typeorm';
-import { SnakeNamingStrategy } from './snake-naming.strategy';
+import { SnakeNamingStrategy } from './snake-naming.strategy.js';
 
 // node-postgres devuelve NUMERIC y BIGINT como texto para no perder precisión.
 // Los montos de nómina ya vienen redondeados a centavos, por lo que se exponen como number.
 const PG_OID_INT8 = 20;
 const PG_OID_NUMERIC = 1700;
-types.setTypeParser(PG_OID_INT8, (value) => Number.parseInt(value, 10));
-types.setTypeParser(PG_OID_NUMERIC, (value) => Number.parseFloat(value));
+pg.types.setTypeParser(PG_OID_INT8, (value) => Number.parseInt(value, 10));
+pg.types.setTypeParser(PG_OID_NUMERIC, (value) => Number.parseFloat(value));
 
 export function buildDataSourceOptions(env: {
   DATABASE_URL?: string;

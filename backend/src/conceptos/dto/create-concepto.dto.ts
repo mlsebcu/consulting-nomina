@@ -10,8 +10,8 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { CUENTA_CONTABLE_PATTERN } from '../../common/constants/validacion';
-import { TipoCalculo } from '../../common/enums/nomina.enums';
+import { CUENTA_CONTABLE_PATTERN } from '../../common/constants/validacion.js';
+import { TipoCalculo } from '../../common/enums/nomina.enums.js';
 
 export class CreateConceptoDto {
   @ApiProperty({ example: '106' })

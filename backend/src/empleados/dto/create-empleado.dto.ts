@@ -18,12 +18,12 @@ import {
 import {
   DIAS_MAXIMOS_MES,
   DPI_PATTERN,
-} from '../../common/constants/validacion';
+} from '../../common/constants/validacion.js';
 import {
   EstadoCivil,
   Genero,
   TipoCuenta,
-} from '../../common/enums/nomina.enums';
+} from '../../common/enums/nomina.enums.js';
 
 export class CreateEmpleadoDto {
   @ApiProperty({ example: 'EMP-011' })

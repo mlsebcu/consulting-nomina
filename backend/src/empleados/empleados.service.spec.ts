@@ -1,30 +1,37 @@
+import { jest } from '@jest/globals';
 import { ConflictException } from '@nestjs/common';
 import { Not, Repository } from 'typeorm';
-import { DepartamentosService } from '../departamentos/departamentos.service';
-import { EmpleadosService } from './empleados.service';
-import { Empleado } from './entities/empleado.entity';
+import { DepartamentosService } from '../departamentos/departamentos.service.js';
+import { EmpleadosService } from './empleados.service.js';
+import { Empleado } from './entities/empleado.entity.js';
+
+type FuncionMock = (...args: any[]) => any;
 
 const USUARIO_ID = 1;
 const EMPLEADO_ID = 7;
 
 describe('EmpleadosService.update', () => {
   let service: EmpleadosService;
-  let repo: { findOne: jest.Mock; exists: jest.Mock; save: jest.Mock };
+  let repo: {
+    findOne: jest.Mock<FuncionMock>;
+    exists: jest.Mock<FuncionMock>;
+    save: jest.Mock<FuncionMock>;
+  };
 
   beforeEach(() => {
     repo = {
-      findOne: jest.fn().mockResolvedValue({
+      findOne: jest.fn<FuncionMock>().mockResolvedValue({
         empleadoId: EMPLEADO_ID,
         codigoEmpleado: 'EMP-007',
         dpi: '1000000000707',
         departamentoId: 1,
       }),
-      exists: jest.fn().mockResolvedValue(false),
-      save: jest.fn((e: Empleado) => Promise.resolve(e)),
+      exists: jest.fn<FuncionMock>().mockResolvedValue(false),
+      save: jest.fn<FuncionMock>((e: Empleado) => Promise.resolve(e)),
     };
     service = new EmpleadosService(
       repo as unknown as Repository<Empleado>,
-      { findOne: jest.fn() } as unknown as DepartamentosService,
+      { findOne: jest.fn<FuncionMock>() } as unknown as DepartamentosService,
     );
   });
 

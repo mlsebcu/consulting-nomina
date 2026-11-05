@@ -24,3 +24,10 @@ Thumbs.db
 # Documentación local y herramientas del editor
 *.md
 .claude/
+
+# Variables de entorno por ambiente
+.env.*
+!.env.example
+
+# Vercel
+.vercel/

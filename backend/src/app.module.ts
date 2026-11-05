@@ -1,20 +1,20 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { ConceptosModule } from './conceptos/conceptos.module';
-import { validateEnv } from './config/env.validation';
-import { typeOrmConfigFactory } from './database/database.config';
-import { DepartamentosModule } from './departamentos/departamentos.module';
-import { EmpleadosModule } from './empleados/empleados.module';
-import { HealthController } from './health.controller';
-import { InicioModule } from './inicio/inicio.module';
-import { NominaModule } from './nomina/nomina.module';
-import { NovedadesModule } from './novedades/novedades.module';
-import { ParametrosModule } from './parametros/parametros.module';
-import { PeriodosModule } from './periodos/periodos.module';
-import { ReportesModule } from './reportes/reportes.module';
-import { UsuariosModule } from './usuarios/usuarios.module';
+import { AuthModule } from './auth/auth.module.js';
+import { ConceptosModule } from './conceptos/conceptos.module.js';
+import { validateEnv } from './config/env.validation.js';
+import { typeOrmConfigFactory } from './database/database.config.js';
+import { DepartamentosModule } from './departamentos/departamentos.module.js';
+import { EmpleadosModule } from './empleados/empleados.module.js';
+import { HealthController } from './health.controller.js';
+import { InicioModule } from './inicio/inicio.module.js';
+import { NominaModule } from './nomina/nomina.module.js';
+import { NovedadesModule } from './novedades/novedades.module.js';
+import { ParametrosModule } from './parametros/parametros.module.js';
+import { PeriodosModule } from './periodos/periodos.module.js';
+import { ReportesModule } from './reportes/reportes.module.js';
+import { UsuariosModule } from './usuarios/usuarios.module.js';
 
 @Module({
   imports: [

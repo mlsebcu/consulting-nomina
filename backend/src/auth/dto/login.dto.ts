@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../auth.constants';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../auth.constants.js';
 
 export class LoginDto {
   @ApiProperty({ example: 'admin' })

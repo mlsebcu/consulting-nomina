@@ -1,28 +1,33 @@
+import { jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Usuario } from '../auth/usuario.entity';
-import { Rol } from '../common/enums/rol.enum';
-import { UsuariosService } from './usuarios.service';
+import { Usuario } from '../auth/usuario.entity.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import { UsuariosService } from './usuarios.service.js';
+
+type FuncionMock = (...args: any[]) => any;
 
 const ADMIN_ID = 1;
 
 describe('UsuariosService', () => {
   let service: UsuariosService;
   let repo: {
-    exists: jest.Mock;
-    findOne: jest.Mock;
-    save: jest.Mock;
-    create: jest.Mock;
+    exists: jest.Mock<FuncionMock>;
+    findOne: jest.Mock<FuncionMock>;
+    save: jest.Mock<FuncionMock>;
+    create: jest.Mock<FuncionMock>;
   };
 
   beforeEach(() => {
     repo = {
-      exists: jest.fn().mockResolvedValue(false),
+      exists: jest.fn<FuncionMock>().mockResolvedValue(false),
       findOne: jest
-        .fn()
+        .fn<FuncionMock>()
         .mockResolvedValue({ usuarioId: ADMIN_ID, rol: Rol.ADMIN }),
-      save: jest.fn((u: Usuario) => Promise.resolve({ usuarioId: 2, ...u })),
-      create: jest.fn((u: Partial<Usuario>) => u),
+      save: jest.fn<FuncionMock>((u: Usuario) =>
+        Promise.resolve({ ...u, usuarioId: 2 }),
+      ),
+      create: jest.fn<FuncionMock>((u: Partial<Usuario>) => u),
     };
     service = new UsuariosService(repo as unknown as Repository<Usuario>);
   });

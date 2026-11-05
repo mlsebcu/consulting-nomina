@@ -1,4 +1,4 @@
-import type { Rol } from '../enums/rol.enum';
+import type { Rol } from '../enums/rol.enum.js';
 
 export interface UsuarioAutenticado {
   usuarioId: number;

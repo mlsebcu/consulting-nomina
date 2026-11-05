@@ -5,12 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { BCRYPT_SALT_ROUNDS } from '../auth/auth.constants';
-import { Usuario } from '../auth/usuario.entity';
-import { Rol } from '../common/enums/rol.enum';
-import { CreateUsuarioDto, UpdateUsuarioDto } from './dto/usuario.dto';
+import { BCRYPT_SALT_ROUNDS } from '../auth/auth.constants.js';
+import { Usuario } from '../auth/usuario.entity.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import { CreateUsuarioDto, UpdateUsuarioDto } from './dto/usuario.dto.js';
 
 @Injectable()
 export class UsuariosService {

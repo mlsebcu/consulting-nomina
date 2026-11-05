@@ -6,15 +6,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateConceptoDto } from './dto/create-concepto.dto';
-import { CreateNaturalezaDto } from './dto/create-naturaleza.dto';
-import { CreateReglaFiscalDto } from './dto/create-regla-fiscal.dto';
-import { UpdateConceptoDto } from './dto/update-concepto.dto';
-import { UpdateNaturalezaDto } from './dto/update-naturaleza.dto';
-import { UpdateReglaFiscalDto } from './dto/update-regla-fiscal.dto';
-import { ConceptoReglaFiscal } from './entities/concepto-regla-fiscal.entity';
-import { Concepto } from './entities/concepto.entity';
-import { NaturalezaConcepto } from './entities/naturaleza-concepto.entity';
+import { CreateConceptoDto } from './dto/create-concepto.dto.js';
+import { CreateNaturalezaDto } from './dto/create-naturaleza.dto.js';
+import { CreateReglaFiscalDto } from './dto/create-regla-fiscal.dto.js';
+import { UpdateConceptoDto } from './dto/update-concepto.dto.js';
+import { UpdateNaturalezaDto } from './dto/update-naturaleza.dto.js';
+import { UpdateReglaFiscalDto } from './dto/update-regla-fiscal.dto.js';
+import { ConceptoReglaFiscal } from './entities/concepto-regla-fiscal.entity.js';
+import { Concepto } from './entities/concepto.entity.js';
+import { NaturalezaConcepto } from './entities/naturaleza-concepto.entity.js';
 
 @Injectable()
 export class ConceptosService {

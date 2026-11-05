@@ -1,20 +1,23 @@
+import { jest } from '@jest/globals';
 import { DataSource } from 'typeorm';
-import { NominaService } from '../nomina/nomina.service';
-import { PeriodosService } from '../periodos/periodos.service';
-import { ReportesService } from './reportes.service';
+import { NominaService } from '../nomina/nomina.service.js';
+import { PeriodosService } from '../periodos/periodos.service.js';
+import { ReportesService } from './reportes.service.js';
+
+type FuncionMock = (...args: any[]) => any;
 
 const PERIODO_ID = 2;
 
 describe('ReportesService', () => {
   let service: ReportesService;
-  let query: jest.Mock;
+  let query: jest.Mock<FuncionMock>;
 
   beforeEach(() => {
-    query = jest.fn();
+    query = jest.fn<FuncionMock>();
     service = new ReportesService(
       { query } as unknown as DataSource,
       {
-        findOne: jest.fn().mockResolvedValue({}),
+        findOne: jest.fn<FuncionMock>().mockResolvedValue({}),
       } as unknown as PeriodosService,
       {} as NominaService,
     );

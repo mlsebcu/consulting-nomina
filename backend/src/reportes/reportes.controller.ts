@@ -1,9 +1,9 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../auth/roles.decorator';
-import { Rol } from '../common/enums/rol.enum';
-import { ReporteCumpleanierosDto } from './dto/reporte-cumpleanieros.dto';
-import { ReportesService } from './reportes.service';
+import { Roles } from '../auth/roles.decorator.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import { ReporteCumpleanierosDto } from './dto/reporte-cumpleanieros.dto.js';
+import { ReportesService } from './reportes.service.js';
 
 @ApiTags('Reportes')
 @ApiBearerAuth()

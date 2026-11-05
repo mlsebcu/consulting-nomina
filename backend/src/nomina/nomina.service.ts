@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { TipoNomina } from '../common/enums/nomina.enums';
-import { PeriodosService } from '../periodos/periodos.service';
-import { NominaEmpleado } from './entities/nomina-empleado.entity';
+import { TipoNomina } from '../common/enums/nomina.enums.js';
+import { PeriodosService } from '../periodos/periodos.service.js';
+import { NominaEmpleado } from './entities/nomina-empleado.entity.js';
 
 export interface ResultadoProceso {
   mensaje: string;

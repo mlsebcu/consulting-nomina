@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, Matches, MaxLength } from 'class-validator';
-import { CUENTA_CONTABLE_PATTERN } from '../../common/constants/validacion';
+import { CUENTA_CONTABLE_PATTERN } from '../../common/constants/validacion.js';
 
 export class CreateDepartamentoDto {
   @ApiProperty({ example: 'Finanzas' })

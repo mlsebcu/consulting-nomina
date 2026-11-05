@@ -5,9 +5,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { BaseEntity } from '../common/entities/base.entity';
-import { Rol } from '../common/enums/rol.enum';
-import { Empleado } from '../empleados/entities/empleado.entity';
+import { BaseEntity } from '../common/entities/base.entity.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import { Empleado } from '../empleados/entities/empleado.entity.js';
 
 @Entity('usuario')
 export class Usuario extends BaseEntity {

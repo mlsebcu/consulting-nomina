@@ -5,9 +5,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { TipoCalculo } from '../../common/enums/nomina.enums';
-import { NaturalezaConcepto } from './naturaleza-concepto.entity';
+import { BaseEntity } from '../../common/entities/base.entity.js';
+import { TipoCalculo } from '../../common/enums/nomina.enums.js';
+import { NaturalezaConcepto } from './naturaleza-concepto.entity.js';
 
 @Entity('concepto')
 export class Concepto extends BaseEntity {

@@ -9,13 +9,13 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Rol } from '../common/enums/rol.enum';
-import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
-import { CreateEmpleadoDto } from './dto/create-empleado.dto';
-import { UpdateEmpleadoDto } from './dto/update-empleado.dto';
-import { EmpleadosService } from './empleados.service';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface.js';
+import { CreateEmpleadoDto } from './dto/create-empleado.dto.js';
+import { UpdateEmpleadoDto } from './dto/update-empleado.dto.js';
+import { EmpleadosService } from './empleados.service.js';
 
 @ApiTags('Empleados')
 @ApiBearerAuth()

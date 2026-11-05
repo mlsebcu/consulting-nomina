@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { CONCEPTO_SISTEMA } from '../common/constants/conceptos-sistema';
-import { mapRows } from '../database/row-mapper';
-import { NominaService } from '../nomina/nomina.service';
-import { PeriodosService } from '../periodos/periodos.service';
+import { CONCEPTO_SISTEMA } from '../common/constants/conceptos-sistema.js';
+import { mapRows } from '../database/row-mapper.js';
+import { NominaService } from '../nomina/nomina.service.js';
+import { PeriodosService } from '../periodos/periodos.service.js';
 import type {
   Cumpleaniero,
   FilaDescuento,
   FilaLibroSalarios,
   FilaPoliza,
   TotalDepartamento,
-} from './reportes.types';
+} from './reportes.types.js';
 
 const CENTAVOS = 100;
 

@@ -2,9 +2,9 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import helmet from 'helmet';
-import { AppModule } from './app.module';
-import { DatabaseExceptionFilter } from './database/database-exception.filter';
+import { AppModule } from './app.module.js';
+import { cabecerasSeguridad } from './common/middleware/cabeceras-seguridad.middleware.js';
+import { DatabaseExceptionFilter } from './database/database-exception.filter.js';
 
 const PUERTO_POR_DEFECTO = 3000;
 
@@ -13,8 +13,7 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   const esProduccion = config.get('NODE_ENV') === 'production';
 
-  // Swagger UI usa scripts en línea, solo disponible fuera de producción
-  app.use(helmet({ contentSecurityPolicy: esProduccion ? undefined : false }));
+  app.use(cabecerasSeguridad);
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({

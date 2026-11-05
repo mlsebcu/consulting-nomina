@@ -10,13 +10,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Rol } from '../common/enums/rol.enum';
-import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
-import { CreateNovedadDto } from './dto/create-novedad.dto';
-import { UpdateNovedadDto } from './dto/update-novedad.dto';
-import { NovedadesService } from './novedades.service';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface.js';
+import { CreateNovedadDto } from './dto/create-novedad.dto.js';
+import { UpdateNovedadDto } from './dto/update-novedad.dto.js';
+import { NovedadesService } from './novedades.service.js';
 
 @ApiTags('Novedades')
 @ApiBearerAuth()

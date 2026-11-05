@@ -5,12 +5,13 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { EstadoNomina, TipoNomina } from '../../common/enums/nomina.enums';
-import { Empleado } from '../../empleados/entities/empleado.entity';
-import { Periodo } from '../../periodos/entities/periodo.entity';
-import { NominaDetalle } from './nomina-detalle.entity';
+import { BaseEntity } from '../../common/entities/base.entity.js';
+import { EstadoNomina, TipoNomina } from '../../common/enums/nomina.enums.js';
+import { Empleado } from '../../empleados/entities/empleado.entity.js';
+import { Periodo } from '../../periodos/entities/periodo.entity.js';
+import { NominaDetalle } from './nomina-detalle.entity.js';
 
 const MONTO = { type: 'numeric', precision: 12, scale: 2, default: 0 } as const;
 
@@ -61,5 +62,5 @@ export class NominaEmpleado extends BaseEntity {
   fechaCalculo: Date;
 
   @OneToMany(() => NominaDetalle, (detalle) => detalle.nominaEmpleado)
-  detalles: NominaDetalle[];
+  detalles: Relation<NominaDetalle[]>;
 }

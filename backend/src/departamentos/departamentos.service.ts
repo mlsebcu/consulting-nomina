@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateDepartamentoDto } from './dto/create-departamento.dto';
-import { UpdateDepartamentoDto } from './dto/update-departamento.dto';
-import { Empleado } from '../empleados/entities/empleado.entity';
-import { Departamento } from './entities/departamento.entity';
+import { CreateDepartamentoDto } from './dto/create-departamento.dto.js';
+import { UpdateDepartamentoDto } from './dto/update-departamento.dto.js';
+import { Empleado } from '../empleados/entities/empleado.entity.js';
+import { Departamento } from './entities/departamento.entity.js';
 
 @Injectable()
 export class DepartamentosService {

@@ -9,13 +9,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { TipoNomina } from '../common/enums/nomina.enums';
-import { Rol } from '../common/enums/rol.enum';
-import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
-import { PeriodoNominaDto } from './dto/periodo-nomina.dto';
-import { NominaService } from './nomina.service';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { TipoNomina } from '../common/enums/nomina.enums.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface.js';
+import { PeriodoNominaDto } from './dto/periodo-nomina.dto.js';
+import { NominaService } from './nomina.service.js';
 
 @ApiTags('Nómina')
 @ApiBearerAuth()

@@ -4,10 +4,11 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { Concepto } from '../../conceptos/entities/concepto.entity';
-import { NominaEmpleado } from './nomina-empleado.entity';
+import { BaseEntity } from '../../common/entities/base.entity.js';
+import { Concepto } from '../../conceptos/entities/concepto.entity.js';
+import { NominaEmpleado } from './nomina-empleado.entity.js';
 
 @Entity('nomina_detalle')
 export class NominaDetalle extends BaseEntity {
@@ -21,7 +22,7 @@ export class NominaDetalle extends BaseEntity {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'nomina_empleado_id' })
-  nominaEmpleado: NominaEmpleado;
+  nominaEmpleado: Relation<NominaEmpleado>;
 
   @Column({ type: 'int' })
   conceptoId: number;

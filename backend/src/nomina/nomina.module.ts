@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PeriodosModule } from '../periodos/periodos.module';
-import { NominaDetalle } from './entities/nomina-detalle.entity';
-import { NominaEmpleado } from './entities/nomina-empleado.entity';
-import { NominaController } from './nomina.controller';
-import { NominaService } from './nomina.service';
+import { PeriodosModule } from '../periodos/periodos.module.js';
+import { NominaDetalle } from './entities/nomina-detalle.entity.js';
+import { NominaEmpleado } from './entities/nomina-empleado.entity.js';
+import { NominaController } from './nomina.controller.js';
+import { NominaService } from './nomina.service.js';
 
 @Module({
   imports: [

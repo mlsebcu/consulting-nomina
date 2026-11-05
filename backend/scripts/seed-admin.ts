@@ -1,19 +1,19 @@
 import 'dotenv/config';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
 import {
   BCRYPT_SALT_ROUNDS,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
-} from '../src/auth/auth.constants';
-import { Usuario } from '../src/auth/usuario.entity';
-import { Rol } from '../src/common/enums/rol.enum';
-import { ConceptoReglaFiscal } from '../src/conceptos/entities/concepto-regla-fiscal.entity';
-import { Concepto } from '../src/conceptos/entities/concepto.entity';
-import { NaturalezaConcepto } from '../src/conceptos/entities/naturaleza-concepto.entity';
-import { buildDataSourceOptions } from '../src/database/database.config';
-import { Departamento } from '../src/departamentos/entities/departamento.entity';
-import { Empleado } from '../src/empleados/entities/empleado.entity';
+} from '../src/auth/auth.constants.js';
+import { Usuario } from '../src/auth/usuario.entity.js';
+import { Rol } from '../src/common/enums/rol.enum.js';
+import { ConceptoReglaFiscal } from '../src/conceptos/entities/concepto-regla-fiscal.entity.js';
+import { Concepto } from '../src/conceptos/entities/concepto.entity.js';
+import { NaturalezaConcepto } from '../src/conceptos/entities/naturaleza-concepto.entity.js';
+import { buildDataSourceOptions } from '../src/database/database.config.js';
+import { Departamento } from '../src/departamentos/entities/departamento.entity.js';
+import { Empleado } from '../src/empleados/entities/empleado.entity.js';
 
 function leerVariable(nombre: string): string {
   const valor = process.env[nombre];

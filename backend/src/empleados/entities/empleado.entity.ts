@@ -5,13 +5,13 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
+import { BaseEntity } from '../../common/entities/base.entity.js';
 import {
   EstadoCivil,
   Genero,
   TipoCuenta,
-} from '../../common/enums/nomina.enums';
-import { Departamento } from '../../departamentos/entities/departamento.entity';
+} from '../../common/enums/nomina.enums.js';
+import { Departamento } from '../../departamentos/entities/departamento.entity.js';
 
 @Entity('empleado')
 export class Empleado extends BaseEntity {

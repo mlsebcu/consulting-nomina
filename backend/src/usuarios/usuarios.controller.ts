@@ -8,16 +8,16 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Rol } from '../common/enums/rol.enum';
-import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface.js';
 import {
   CreateUsuarioDto,
   PasswordDto,
   UpdateUsuarioDto,
-} from './dto/usuario.dto';
-import { UsuariosService } from './usuarios.service';
+} from './dto/usuario.dto.js';
+import { UsuariosService } from './usuarios.service.js';
 
 @ApiTags('Usuarios')
 @ApiBearerAuth()

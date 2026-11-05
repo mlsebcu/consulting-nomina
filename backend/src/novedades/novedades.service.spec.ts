@@ -1,12 +1,15 @@
+import { jest } from '@jest/globals';
 import { BadRequestException } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { CONCEPTO_SISTEMA } from '../common/constants/conceptos-sistema';
-import { EstadoPeriodo, TipoCalculo } from '../common/enums/nomina.enums';
-import { ConceptosService } from '../conceptos/conceptos.service';
-import { EmpleadosService } from '../empleados/empleados.service';
-import { PeriodosService } from '../periodos/periodos.service';
-import { Novedad } from './entities/novedad.entity';
-import { modoCaptura, NovedadesService } from './novedades.service';
+import { CONCEPTO_SISTEMA } from '../common/constants/conceptos-sistema.js';
+import { EstadoPeriodo, TipoCalculo } from '../common/enums/nomina.enums.js';
+import { ConceptosService } from '../conceptos/conceptos.service.js';
+import { EmpleadosService } from '../empleados/empleados.service.js';
+import { PeriodosService } from '../periodos/periodos.service.js';
+import { Novedad } from './entities/novedad.entity.js';
+import { modoCaptura, NovedadesService } from './novedades.service.js';
+
+type FuncionMock = (...args: any[]) => any;
 
 const USUARIO_ID = 1;
 
@@ -51,24 +54,28 @@ describe('modoCaptura', () => {
 describe('NovedadesService.create', () => {
   let service: NovedadesService;
   let repo: jest.Mocked<Pick<Repository<Novedad>, 'create' | 'save'>>;
-  let periodos: { findOne: jest.Mock };
-  let conceptos: { findOneConcepto: jest.Mock };
+  let periodos: { findOne: jest.Mock<FuncionMock> };
+  let conceptos: { findOneConcepto: jest.Mock<FuncionMock> };
 
   beforeEach(() => {
     repo = {
-      create: jest.fn((dto) => dto as Novedad),
-      save: jest.fn((entidad) => Promise.resolve(entidad as Novedad)),
+      create: jest.fn<FuncionMock>((dto) => dto as Novedad),
+      save: jest.fn<FuncionMock>((entidad) =>
+        Promise.resolve(entidad as Novedad),
+      ),
     } as never;
     periodos = {
-      findOne: jest.fn().mockResolvedValue({ estado: EstadoPeriodo.ABIERTO }),
+      findOne: jest
+        .fn<FuncionMock>()
+        .mockResolvedValue({ estado: EstadoPeriodo.ABIERTO }),
     };
-    conceptos = { findOneConcepto: jest.fn() };
+    conceptos = { findOneConcepto: jest.fn<FuncionMock>() };
 
     service = new NovedadesService(
       repo as unknown as Repository<Novedad>,
       periodos as unknown as PeriodosService,
       {
-        findOne: jest.fn().mockResolvedValue({}),
+        findOne: jest.fn<FuncionMock>().mockResolvedValue({}),
       } as unknown as EmpleadosService,
       conceptos as unknown as ConceptosService,
     );

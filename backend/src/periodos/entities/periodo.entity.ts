@@ -5,9 +5,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Usuario } from '../../auth/usuario.entity';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { EstadoPeriodo, TipoPeriodo } from '../../common/enums/nomina.enums';
+import { Usuario } from '../../auth/usuario.entity.js';
+import { BaseEntity } from '../../common/entities/base.entity.js';
+import { EstadoPeriodo, TipoPeriodo } from '../../common/enums/nomina.enums.js';
 
 @Entity('periodo')
 export class Periodo extends BaseEntity {

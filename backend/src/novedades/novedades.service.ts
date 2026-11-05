@@ -5,15 +5,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CONCEPTOS_POR_HORAS } from '../common/constants/conceptos-sistema';
-import { EstadoPeriodo, TipoCalculo } from '../common/enums/nomina.enums';
-import { ConceptosService } from '../conceptos/conceptos.service';
-import { Concepto } from '../conceptos/entities/concepto.entity';
-import { EmpleadosService } from '../empleados/empleados.service';
-import { PeriodosService } from '../periodos/periodos.service';
-import { CreateNovedadDto } from './dto/create-novedad.dto';
-import { UpdateNovedadDto } from './dto/update-novedad.dto';
-import { Novedad } from './entities/novedad.entity';
+import { CONCEPTOS_POR_HORAS } from '../common/constants/conceptos-sistema.js';
+import { EstadoPeriodo, TipoCalculo } from '../common/enums/nomina.enums.js';
+import { ConceptosService } from '../conceptos/conceptos.service.js';
+import { Concepto } from '../conceptos/entities/concepto.entity.js';
+import { EmpleadosService } from '../empleados/empleados.service.js';
+import { PeriodosService } from '../periodos/periodos.service.js';
+import { CreateNovedadDto } from './dto/create-novedad.dto.js';
+import { UpdateNovedadDto } from './dto/update-novedad.dto.js';
+import { Novedad } from './entities/novedad.entity.js';
 
 export type ModoCaptura = 'CANTIDAD' | 'MONTO';
 

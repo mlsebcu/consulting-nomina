@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConceptosService } from './conceptos.service';
-import { ConceptosController } from './conceptos.controller';
-import { NaturalezaConcepto } from './entities/naturaleza-concepto.entity';
-import { Concepto } from './entities/concepto.entity';
-import { ConceptoReglaFiscal } from './entities/concepto-regla-fiscal.entity';
+import { ConceptosService } from './conceptos.service.js';
+import { ConceptosController } from './conceptos.controller.js';
+import { NaturalezaConcepto } from './entities/naturaleza-concepto.entity.js';
+import { Concepto } from './entities/concepto.entity.js';
+import { ConceptoReglaFiscal } from './entities/concepto-regla-fiscal.entity.js';
 
 @Module({
   imports: [

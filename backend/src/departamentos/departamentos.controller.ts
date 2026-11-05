@@ -9,13 +9,13 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Rol } from '../common/enums/rol.enum';
-import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
-import { DepartamentosService } from './departamentos.service';
-import { CreateDepartamentoDto } from './dto/create-departamento.dto';
-import { UpdateDepartamentoDto } from './dto/update-departamento.dto';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface.js';
+import { DepartamentosService } from './departamentos.service.js';
+import { CreateDepartamentoDto } from './dto/create-departamento.dto.js';
+import { UpdateDepartamentoDto } from './dto/update-departamento.dto.js';
 
 @ApiTags('Departamentos')
 @ApiBearerAuth()

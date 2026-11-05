@@ -1,6 +1,6 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { TipoDatoParametro } from '../../common/enums/nomina.enums';
+import { BaseEntity } from '../../common/entities/base.entity.js';
+import { TipoDatoParametro } from '../../common/enums/nomina.enums.js';
 
 @Entity('parametro_nomina')
 export class Parametro extends BaseEntity {

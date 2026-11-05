@@ -5,10 +5,10 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { Concepto } from '../../conceptos/entities/concepto.entity';
-import { Empleado } from '../../empleados/entities/empleado.entity';
-import { Periodo } from '../../periodos/entities/periodo.entity';
+import { BaseEntity } from '../../common/entities/base.entity.js';
+import { Concepto } from '../../conceptos/entities/concepto.entity.js';
+import { Empleado } from '../../empleados/entities/empleado.entity.js';
+import { Periodo } from '../../periodos/entities/periodo.entity.js';
 
 @Entity('novedad_nomina')
 export class Novedad extends BaseEntity {

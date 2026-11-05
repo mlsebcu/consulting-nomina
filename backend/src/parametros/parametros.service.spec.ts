@@ -1,20 +1,27 @@
+import { jest } from '@jest/globals';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { TipoDatoParametro } from '../common/enums/nomina.enums';
-import { Parametro } from './entities/parametro.entity';
-import { ParametrosService } from './parametros.service';
+import { TipoDatoParametro } from '../common/enums/nomina.enums.js';
+import { Parametro } from './entities/parametro.entity.js';
+import { ParametrosService } from './parametros.service.js';
+
+type FuncionMock = (...args: any[]) => any;
 
 const USUARIO_ID = 1;
 
 describe('ParametrosService', () => {
   let service: ParametrosService;
-  let repo: { findOne: jest.Mock; save: jest.Mock; count: jest.Mock };
+  let repo: {
+    findOne: jest.Mock<FuncionMock>;
+    save: jest.Mock<FuncionMock>;
+    count: jest.Mock<FuncionMock>;
+  };
 
   beforeEach(() => {
     repo = {
-      findOne: jest.fn(),
-      save: jest.fn((p: Parametro) => Promise.resolve(p)),
-      count: jest.fn(),
+      findOne: jest.fn<FuncionMock>(),
+      save: jest.fn<FuncionMock>((p: Parametro) => Promise.resolve(p)),
+      count: jest.fn<FuncionMock>(),
     };
     service = new ParametrosService(repo as unknown as Repository<Parametro>);
   });

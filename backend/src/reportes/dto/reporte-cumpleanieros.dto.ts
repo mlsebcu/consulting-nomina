@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, Max, Min } from 'class-validator';
-import { MESES_DEL_ANIO } from '../../common/constants/validacion';
+import { MESES_DEL_ANIO } from '../../common/constants/validacion.js';
 
 export class ReporteCumpleanierosDto {
   @ApiProperty({ example: 11, minimum: 1, maximum: MESES_DEL_ANIO })

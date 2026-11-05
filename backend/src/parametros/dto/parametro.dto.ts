@@ -9,7 +9,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { ANIO_MAXIMO, ANIO_MINIMO } from '../../common/constants/validacion';
+import { ANIO_MAXIMO, ANIO_MINIMO } from '../../common/constants/validacion.js';
 
 export class UpdateParametroDto {
   @ApiProperty({ example: '4.83' })

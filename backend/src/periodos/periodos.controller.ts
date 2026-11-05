@@ -9,13 +9,13 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { PeriodosService } from './periodos.service';
-import { CreatePeriodoDto } from './dto/create-periodo.dto';
-import { UpdatePeriodoDto } from './dto/update-periodo.dto';
-import { Roles } from '../auth/roles.decorator';
-import { Rol } from '../common/enums/rol.enum';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { PeriodosService } from './periodos.service.js';
+import { CreatePeriodoDto } from './dto/create-periodo.dto.js';
+import { UpdatePeriodoDto } from './dto/update-periodo.dto.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface.js';
 
 @ApiTags('Periodos')
 @ApiBearerAuth()

@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TipoDatoParametro } from '../common/enums/nomina.enums';
-import { CopiarParametrosDto, UpdateParametroDto } from './dto/parametro.dto';
-import { Parametro } from './entities/parametro.entity';
+import { TipoDatoParametro } from '../common/enums/nomina.enums.js';
+import { CopiarParametrosDto, UpdateParametroDto } from './dto/parametro.dto.js';
+import { Parametro } from './entities/parametro.entity.js';
 
 const NUMERO_PATTERN = /^-?\d+(\.\d+)?$/;
 

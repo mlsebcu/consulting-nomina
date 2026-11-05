@@ -12,8 +12,8 @@ import {
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
-} from '../../auth/auth.constants';
-import { Rol } from '../../common/enums/rol.enum';
+} from '../../auth/auth.constants.js';
+import { Rol } from '../../common/enums/rol.enum.js';
 
 const NOMBRE_USUARIO_PATTERN = /^[a-z0-9._-]{3,50}$/;
 const NOMBRE_COMPLETO_MAX_LENGTH = 150;

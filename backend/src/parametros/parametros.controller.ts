@@ -9,16 +9,16 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../auth/roles.decorator';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Rol } from '../common/enums/rol.enum';
-import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface';
+import { Roles } from '../auth/roles.decorator.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { Rol } from '../common/enums/rol.enum.js';
+import type { UsuarioAutenticado } from '../common/interfaces/usuario-autenticado.interface.js';
 import {
   CopiarParametrosDto,
   ParametrosQueryDto,
   UpdateParametroDto,
-} from './dto/parametro.dto';
-import { ParametrosService } from './parametros.service';
+} from './dto/parametro.dto.js';
+import { ParametrosService } from './parametros.service.js';
 
 @ApiTags('Parámetros')
 @ApiBearerAuth()

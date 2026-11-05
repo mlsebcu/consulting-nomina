@@ -10,8 +10,8 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { ANIO_MAXIMO, ANIO_MINIMO } from '../../common/constants/validacion';
-import { TipoImpuesto } from '../../common/enums/nomina.enums';
+import { ANIO_MAXIMO, ANIO_MINIMO } from '../../common/constants/validacion.js';
+import { TipoImpuesto } from '../../common/enums/nomina.enums.js';
 
 const PORCENTAJE_MAXIMO = 100;
 const CODIGO_PAIS_LONGITUD = 3;

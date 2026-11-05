@@ -1,5 +1,5 @@
-import { mapRows } from './row-mapper';
-import { SnakeNamingStrategy, toSnakeCase } from './snake-naming.strategy';
+import { mapRows } from './row-mapper.js';
+import { SnakeNamingStrategy, toSnakeCase } from './snake-naming.strategy.js';
 
 describe('SnakeNamingStrategy', () => {
   const strategy = new SnakeNamingStrategy();

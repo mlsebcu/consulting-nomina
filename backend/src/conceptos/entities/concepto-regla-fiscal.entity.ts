@@ -5,9 +5,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { TipoImpuesto } from '../../common/enums/nomina.enums';
-import { Concepto } from './concepto.entity';
+import { BaseEntity } from '../../common/entities/base.entity.js';
+import { TipoImpuesto } from '../../common/enums/nomina.enums.js';
+import { Concepto } from './concepto.entity.js';
 
 @Entity('concepto_regla_fiscal')
 export class ConceptoReglaFiscal extends BaseEntity {
