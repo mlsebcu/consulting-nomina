@@ -17,6 +17,9 @@ export class Usuario extends BaseEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   nombreUsuario: string;
 
+  @Column({ type: 'varchar', length: 150 })
+  nombreCompleto: string;
+
   @Column({ type: 'varchar', length: 200, select: false })
   passwordHash: string;
 

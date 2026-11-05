@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { iniciales as obtenerIniciales, nombreVisible } from "@/lib/sesion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -30,7 +31,8 @@ export function NavUser() {
 
   if (!usuario) return null;
 
-  const iniciales = usuario.nombreUsuario.slice(0, 2).toUpperCase();
+  const nombre = nombreVisible(usuario);
+  const iniciales = obtenerIniciales(nombre);
 
   function handleLogout() {
     logout();
@@ -48,7 +50,7 @@ export function NavUser() {
               <AvatarFallback>{iniciales}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{usuario.nombreUsuario}</span>
+              <span className="truncate font-medium">{nombre}</span>
               <span className="truncate text-xs">{ETIQUETA_ROL[usuario.rol]}</span>
             </div>
             <ChevronsUpDownIcon className="ml-auto size-4" />
@@ -66,8 +68,10 @@ export function NavUser() {
                     <AvatarFallback>{iniciales}</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{usuario.nombreUsuario}</span>
-                    <span className="truncate text-xs">{ETIQUETA_ROL[usuario.rol]}</span>
+                    <span className="truncate font-medium">{nombre}</span>
+                    <span className="truncate text-xs">
+                      {usuario.nombreUsuario} · {ETIQUETA_ROL[usuario.rol]}
+                    </span>
                   </div>
                 </div>
               </DropdownMenuLabel>

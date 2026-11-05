@@ -26,6 +26,7 @@ function leerVariable(nombre: string): string {
 async function seedAdmin() {
   const nombreUsuario = leerVariable('ADMIN_USERNAME');
   const password = leerVariable('ADMIN_PASSWORD');
+  const nombreCompleto = leerVariable('ADMIN_NOMBRE');
 
   if (
     password.length < PASSWORD_MIN_LENGTH ||
@@ -59,6 +60,7 @@ async function seedAdmin() {
     await repo.save(
       repo.create({
         nombreUsuario,
+        nombreCompleto,
         passwordHash: await bcrypt.hash(password, BCRYPT_SALT_ROUNDS),
         rol: Rol.ADMIN,
       }),

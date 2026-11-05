@@ -22,6 +22,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
+import { nombreVisible } from "@/lib/sesion";
 import { mensajeError } from "@/utils/errores";
 import { formatMoneda } from "@/utils/formatters";
 import { nombreMes, nombrePeriodo, rangoPeriodo } from "@/utils/periodos";
@@ -101,7 +102,7 @@ export default function InicioPage() {
         <div className="space-y-4">
             <div>
                 <h2 className="text-xl font-semibold">
-                    {saludo()}, {usuario?.nombreUsuario}
+                    {saludo()}, {usuario ? nombreVisible(usuario).split(" ")[0] : ""}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                     {hoy.toLocaleDateString("es-GT", {

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import {
     KeyRoundIcon,
+    PencilIcon,
     Loader2,
     MoreHorizontal,
     Plus,
@@ -53,7 +54,12 @@ import { usuariosApi, type CreateUsuarioDto, type Usuario } from "./Usuarios.api
 
 const ROLES: Record<Rol, string> = { ADMIN: "Administrador", RRHH: "Recursos Humanos" };
 const PASSWORD_MIN_LENGTH = 8;
-const FORM_INICIAL: CreateUsuarioDto = { nombreUsuario: "", rol: "RRHH", password: "" };
+const FORM_INICIAL: CreateUsuarioDto = {
+    nombreUsuario: "",
+    nombreCompleto: "",
+    rol: "RRHH",
+    password: "",
+};
 
 type Accion = { tipo: "estado" | "rol"; usuario: Usuario };
 
@@ -64,6 +70,8 @@ export default function UsuariosPage() {
     const [abrirNuevo, setAbrirNuevo] = useState(false);
     const [passwordDe, setPasswordDe] = useState<Usuario | null>(null);
     const [nuevaPassword, setNuevaPassword] = useState("");
+    const [editarNombre, setEditarNombre] = useState<Usuario | null>(null);
+    const [nombre, setNombre] = useState("");
     const [accion, setAccion] = useState<Accion | null>(null);
     const [error, setError] = useState("");
     const [cargando, setCargando] = useState(true);
@@ -88,7 +96,11 @@ export default function UsuariosPage() {
         setError("");
         setGuardando(true);
         try {
-            await usuariosApi.create({ ...form, nombreUsuario: form.nombreUsuario.trim().toLowerCase() });
+            await usuariosApi.create({
+                ...form,
+                nombreUsuario: form.nombreUsuario.trim().toLowerCase(),
+                nombreCompleto: form.nombreCompleto.trim(),
+            });
             toast.success(`Usuario ${form.nombreUsuario} creado`);
             setAbrirNuevo(false);
             await cargar();
@@ -110,6 +122,23 @@ export default function UsuariosPage() {
             setPasswordDe(null);
         } catch (err) {
             setError(mensajeError(err, "No se pudo cambiar la contraseña."));
+        } finally {
+            setGuardando(false);
+        }
+    }
+
+    async function guardarNombre(e: FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        if (!editarNombre) return;
+        setError("");
+        setGuardando(true);
+        try {
+            await usuariosApi.update(editarNombre.usuarioId, { nombreCompleto: nombre.trim() });
+            toast.success("Nombre actualizado");
+            setEditarNombre(null);
+            await cargar();
+        } catch (err) {
+            setError(mensajeError(err, "No se pudo actualizar el nombre."));
         } finally {
             setGuardando(false);
         }
@@ -170,6 +199,7 @@ export default function UsuariosPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead>Nombre</TableHead>
                                 <TableHead>Usuario</TableHead>
                                 <TableHead>Rol</TableHead>
                                 <TableHead>Estado</TableHead>
@@ -184,7 +214,8 @@ export default function UsuariosPage() {
                                 const esPropio = u.nombreUsuario === sesion?.nombreUsuario;
                                 return (
                                     <TableRow key={u.usuarioId}>
-                                        <TableCell className="font-medium">
+                                        <TableCell className="font-medium">{u.nombreCompleto}</TableCell>
+                                        <TableCell className="font-mono text-xs">
                                             {u.nombreUsuario}
                                             {esPropio && (
                                                 <span className="ml-2 text-xs text-muted-foreground">(usted)</span>
@@ -213,6 +244,16 @@ export default function UsuariosPage() {
                                                     }
                                                 />
                                                 <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem
+                                                        onClick={() => {
+                                                            setNombre(u.nombreCompleto);
+                                                            setError("");
+                                                            setEditarNombre(u);
+                                                        }}
+                                                    >
+                                                        <PencilIcon />
+                                                        Editar nombre
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         onClick={() => {
                                                             setNuevaPassword("");
@@ -261,6 +302,17 @@ export default function UsuariosPage() {
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="nombreCompleto">Nombre completo</Label>
+                                <Input
+                                    id="nombreCompleto"
+                                    value={form.nombreCompleto}
+                                    onChange={(e) => setForm({ ...form, nombreCompleto: e.target.value })}
+                                    placeholder="Juan Pérez"
+                                    maxLength={150}
+                                    required
+                                />
+                            </div>
                             <div className="space-y-2">
                                 <Label htmlFor="nombreUsuario">Usuario</Label>
                                 <Input
@@ -360,6 +412,45 @@ export default function UsuariosPage() {
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setPasswordDe(null)}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={guardando}>
+                                {guardando && <Loader2 className="animate-spin" />}
+                                Guardar
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!editarNombre} onOpenChange={(abierto) => !abierto && setEditarNombre(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <form onSubmit={guardarNombre}>
+                        <DialogHeader>
+                            <DialogTitle>Editar nombre</DialogTitle>
+                            <DialogDescription>
+                                Nombre que se muestra para {editarNombre?.nombreUsuario}.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="editarNombreCompleto">Nombre completo</Label>
+                                <Input
+                                    id="editarNombreCompleto"
+                                    value={nombre}
+                                    onChange={(e) => setNombre(e.target.value)}
+                                    maxLength={150}
+                                    required
+                                />
+                            </div>
+                            {error && (
+                                <Alert variant="destructive">
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setEditarNombre(null)}>
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={guardando}>

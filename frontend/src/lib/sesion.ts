@@ -2,7 +2,18 @@ export type Rol = "ADMIN" | "RRHH";
 
 export interface UsuarioSesion {
     nombreUsuario: string;
+    nombreCompleto?: string;
     rol: Rol;
+}
+
+export function nombreVisible(usuario: UsuarioSesion): string {
+    return usuario.nombreCompleto || usuario.nombreUsuario;
+}
+
+export function iniciales(nombre: string): string {
+    const partes = nombre.trim().split(/\s+/);
+    const letras = partes.length > 1 ? partes[0][0] + partes[1][0] : nombre.slice(0, 2);
+    return letras.toUpperCase();
 }
 
 const TOKEN_KEY = "accessToken";

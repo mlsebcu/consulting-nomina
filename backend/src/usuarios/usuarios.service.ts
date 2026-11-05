@@ -36,6 +36,7 @@ export class UsuariosService {
     const usuario = await this.usuarioRepo.save(
       this.usuarioRepo.create({
         nombreUsuario: dto.nombreUsuario,
+        nombreCompleto: dto.nombreCompleto.trim(),
         rol: dto.rol,
         passwordHash: await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS),
         creadoPor: usuarioId,

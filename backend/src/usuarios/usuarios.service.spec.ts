@@ -29,7 +29,12 @@ describe('UsuariosService', () => {
 
   it('guarda la contraseña como hash bcrypt', async () => {
     await service.create(
-      { nombreUsuario: 'rrhh01', rol: Rol.RRHH, password: 'Segura123' },
+      {
+        nombreUsuario: 'rrhh01',
+        rol: Rol.RRHH,
+        password: 'Segura123',
+        nombreCompleto: 'Recursos Humanos',
+      },
       ADMIN_ID,
     );
 
@@ -43,7 +48,12 @@ describe('UsuariosService', () => {
 
     await expect(
       service.create(
-        { nombreUsuario: 'admin', rol: Rol.ADMIN, password: 'Segura123' },
+        {
+          nombreUsuario: 'admin',
+          nombreCompleto: 'Administrador',
+          rol: Rol.ADMIN,
+          password: 'Segura123',
+        },
         ADMIN_ID,
       ),
     ).rejects.toThrow(ConflictException);

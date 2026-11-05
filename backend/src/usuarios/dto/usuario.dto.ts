@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
@@ -15,6 +16,7 @@ import {
 import { Rol } from '../../common/enums/rol.enum';
 
 const NOMBRE_USUARIO_PATTERN = /^[a-z0-9._-]{3,50}$/;
+const NOMBRE_COMPLETO_MAX_LENGTH = 150;
 
 export class PasswordDto {
   @ApiProperty({ example: '********' })
@@ -32,12 +34,25 @@ export class CreateUsuarioDto extends PasswordDto {
   })
   nombreUsuario: string;
 
+  @ApiProperty({ example: 'Juan Pérez' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(NOMBRE_COMPLETO_MAX_LENGTH)
+  nombreCompleto: string;
+
   @ApiProperty({ enum: Rol })
   @IsEnum(Rol)
   rol: Rol;
 }
 
 export class UpdateUsuarioDto {
+  @ApiPropertyOptional({ example: 'Juan Pérez' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(NOMBRE_COMPLETO_MAX_LENGTH)
+  nombreCompleto?: string;
+
   @ApiPropertyOptional({ enum: Rol })
   @IsOptional()
   @IsEnum(Rol)

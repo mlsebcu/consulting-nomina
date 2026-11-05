@@ -28,6 +28,7 @@ export class AuthService {
       accessToken: await this.jwtService.signAsync(payload),
       usuario: {
         nombreUsuario: usuario.nombreUsuario,
+        nombreCompleto: usuario.nombreCompleto,
         rol: usuario.rol,
       },
     };
@@ -38,6 +39,7 @@ export class AuthService {
       select: {
         usuarioId: true,
         nombreUsuario: true,
+        nombreCompleto: true,
         rol: true,
         passwordHash: true,
       },
