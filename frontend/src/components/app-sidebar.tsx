@@ -13,10 +13,12 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { NAVEGACION, RUTA_INICIAL } from "@/routes/navegacion";
+import { useAuth } from "@/context/AuthContext";
+import { navegacionPorRol, RUTA_INICIAL } from "@/routes/navegacion";
 
 export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
     const { pathname } = useLocation();
+    const { esAdmin } = useAuth();
 
     return (
         <Sidebar variant="inset" className="print:hidden" {...props}>
@@ -36,7 +38,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                {NAVEGACION.map((grupo) => (
+                {navegacionPorRol(esAdmin).map((grupo) => (
                     <SidebarGroup key={grupo.titulo}>
                         <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
                         <SidebarMenu>

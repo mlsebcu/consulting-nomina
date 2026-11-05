@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import Login from "@/features/auth/Login";
 import { RUTA_INICIAL } from "./navegacion";
+import { AdminRoute } from "./AdminRoute";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 const ConceptosPage = lazy(() => import("@/features/conceptos/ConceptosPage"));
@@ -13,6 +14,8 @@ const NovedadesPage = lazy(() => import("@/features/novedades/NovedadesPage"));
 const ParametrosPage = lazy(() => import("@/features/parametros/ParametrosPage"));
 const PeriodosPage = lazy(() => import("@/features/periodos/PeriodosPage"));
 const ReportesPage = lazy(() => import("@/features/reportes/ReportesPage"));
+const InicioPage = lazy(() => import("@/features/inicio/InicioPage"));
+const UsuariosPage = lazy(() => import("@/features/usuarios/UsuariosPage"));
 
 function Cargando() {
     return (
@@ -30,6 +33,7 @@ export function AppRoutes() {
 
                 <Route element={<ProtectedRoute />}>
                     <Route path="/" element={<Navigate to={RUTA_INICIAL} replace />} />
+                    <Route path="/inicio" element={<InicioPage />} />
                     <Route path="/empleados" element={<EmpleadosPage />} />
                     <Route path="/departamentos" element={<DepartamentosPage />} />
                     <Route path="/conceptos" element={<ConceptosPage />} />
@@ -38,6 +42,9 @@ export function AppRoutes() {
                     <Route path="/novedades" element={<NovedadesPage />} />
                     <Route path="/nomina" element={<NominaPage />} />
                     <Route path="/reportes" element={<ReportesPage />} />
+                    <Route element={<AdminRoute />}>
+                        <Route path="/usuarios" element={<UsuariosPage />} />
+                    </Route>
                 </Route>
 
                 <Route path="*" element={<Navigate to={RUTA_INICIAL} replace />} />

@@ -8,5 +8,6 @@ import { ReportesService } from './reportes.service';
   imports: [PeriodosModule, NominaModule],
   controllers: [ReportesController],
   providers: [ReportesService],
+  exports: [ReportesService],
 })
 export class ReportesModule {}

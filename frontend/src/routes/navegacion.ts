@@ -3,8 +3,10 @@ import {
     Building2Icon,
     CalendarClockIcon,
     ClipboardListIcon,
+    HouseIcon,
     ListTreeIcon,
     SlidersHorizontalIcon,
+    UserCogIcon,
     UsersIcon,
     WalletIcon,
     type LucideIcon,
@@ -15,6 +17,7 @@ export interface ItemNavegacion {
     url: string;
     icono: LucideIcon;
     descripcion: string;
+    soloAdmin?: boolean;
 }
 
 export interface GrupoNavegacion {
@@ -23,6 +26,17 @@ export interface GrupoNavegacion {
 }
 
 export const NAVEGACION: GrupoNavegacion[] = [
+    {
+        titulo: "General",
+        items: [
+            {
+                titulo: "Inicio",
+                url: "/inicio",
+                icono: HouseIcon,
+                descripcion: "Resumen del período y cumpleañeros del mes",
+            },
+        ],
+    },
     {
         titulo: "Proceso de nómina",
         items: [
@@ -84,11 +98,25 @@ export const NAVEGACION: GrupoNavegacion[] = [
                 icono: SlidersHorizontalIcon,
                 descripcion: "Porcentajes y valores legales por año",
             },
+            {
+                titulo: "Usuarios",
+                url: "/usuarios",
+                icono: UserCogIcon,
+                descripcion: "Accesos al sistema y roles",
+                soloAdmin: true,
+            },
         ],
     },
 ];
 
-export const RUTA_INICIAL = "/nomina";
+export const RUTA_INICIAL = "/inicio";
+
+export function navegacionPorRol(esAdmin: boolean): GrupoNavegacion[] {
+    return NAVEGACION.map((grupo) => ({
+        ...grupo,
+        items: grupo.items.filter((item) => esAdmin || !item.soloAdmin),
+    })).filter((grupo) => grupo.items.length > 0);
+}
 
 export function buscarItem(pathname: string): ItemNavegacion | undefined {
     return NAVEGACION.flatMap((g) => g.items).find((item) =>
