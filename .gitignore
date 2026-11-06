@@ -31,3 +31,9 @@ Thumbs.db
 
 # Vercel
 .vercel/
+
+# Documentación del proyecto (Word y Markdown)
+docs/
+
+# Reportes de cobertura
+coverage/
