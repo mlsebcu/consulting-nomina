@@ -1,7 +1,39 @@
-node_modules/
+# TypeScript build cache
+*.tsbuildinfo
+
+# Build output
 dist/
 build/
+node_modules/
+
+# Environment
 .env
 .env.local
+
+# Logs
 *.log
+
+# IDE
 .vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentación local y herramientas del editor
+*.md
+.claude/
+
+# Variables de entorno por ambiente
+.env.*
+!.env.example
+
+# Vercel
+.vercel/
+
+# Documentación del proyecto (Word y Markdown)
+docs/
+
+# Reportes de cobertura
+coverage/
