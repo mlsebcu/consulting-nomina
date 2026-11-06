@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { ReceiptTextIcon } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { NavUser } from "@/components/nav-user";
 import {
     Sidebar,
@@ -26,9 +26,7 @@ export function AppSidebar(props: ComponentProps<typeof Sidebar>) {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" render={<NavLink to={RUTA_INICIAL} />}>
-                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                <ReceiptTextIcon className="size-4" />
-                            </div>
+                            <img src={logo} alt="" className="size-8 shrink-0 object-contain" />
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-medium">Consulting, S.A.</span>
                                 <span className="truncate text-xs">Sistema de Nóminas</span>
